@@ -508,25 +508,41 @@
                     role: 'user',
                     content: [{
                         type: 'text',
-                        text: `You are an expert N8N workflow developer. Analyze this workflow diagram image in detail and create a comprehensive N8N workflow JSON.
+                        text: `You are an expert N8N workflow developer. Analyze this workflow diagram image in extreme detail and create a comprehensive, accurate N8N workflow JSON.
 
-ANALYZE THE IMAGE CAREFULLY:
-1. Identify ALL nodes, boxes, and connections shown
-2. Note any text labels, API endpoints, or tool names visible
-3. Recognize the complete flow from start to finish
-4. Include ALL stages and components you can see
+CRITICAL ANALYSIS REQUIREMENTS:
+1. Study EVERY visible element in the image - boxes, text, arrows, connections, labels
+2. Identify ALL stages, nodes, and flow paths shown
+3. Read any visible text labels, API names, service names, or descriptions
+4. Map the complete data flow from start to finish
+5. Note any branching, parallel processes, or conditional flows
 
-CREATE A DETAILED WORKFLOW:
-- Use appropriate N8N node types for each component
-- Include multiple nodes if you see multiple stages or tools
-- Add HTTP Request nodes for any API calls or external services shown
-- Connect all nodes according to the flow in the image
-- Use descriptive names matching what you see in the image
+N8N STRUCTURE REQUIREMENTS:
+- Use proper N8N node types: n8n-nodes-base.webhook, n8n-nodes-base.httpRequest, n8n-nodes-base.set, etc.
+- Create COMPLETE connections object with proper node references
+- Use descriptive node names that match what you see in the image
+- Include realistic parameters for each node type
+- Ensure every node has proper positioning
+- Add error handling and response nodes where appropriate
+
+CONNECTION MAPPING:
+- Study the arrows and lines in the image carefully
+- Create connections for EVERY flow path you can see
+- Use proper N8N connection format: {"node": "targetNodeId", "type": "main", "index": 0}
+- Include parallel branches if multiple paths exist
+- Map conditional flows if decision points are visible
+
+SPECIFIC NODE TYPES TO RECOGNIZE:
+- Chat/Message triggers → n8n-nodes-base.webhook or n8n-nodes-base.manualTrigger
+- AI Agents/Tools → n8n-nodes-base.agent or n8n-nodes-base.openAi
+- API calls → n8n-nodes-base.httpRequest with proper URLs
+- Data processing → n8n-nodes-base.set or n8n-nodes-base.function
+- Responses → n8n-nodes-base.respondToWebhook or n8n-nodes-base.noOp
 
 Description: ${enhancedDescription}
 Project: ${currentProjectName}
 
-Respond with ONLY valid JSON that represents the complete workflow shown in the image.`
+Respond with ONLY valid JSON representing the COMPLETE workflow with ALL nodes and connections visible in the image.`
                     }, {
                         type: 'image',
                         source: {
