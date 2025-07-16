@@ -508,41 +508,54 @@
                     role: 'user',
                     content: [{
                         type: 'text',
-                        text: `You are an expert N8N workflow developer. Analyze this workflow diagram image in extreme detail and create a comprehensive, accurate N8N workflow JSON.
+                        text: `You are an expert N8N workflow developer. Analyze this workflow diagram image with EXTREME precision and create a comprehensive N8N workflow JSON.
 
-CRITICAL ANALYSIS REQUIREMENTS:
-1. Study EVERY visible element in the image - boxes, text, arrows, connections, labels
-2. Identify ALL stages, nodes, and flow paths shown
-3. Read any visible text labels, API names, service names, or descriptions
-4. Map the complete data flow from start to finish
-5. Note any branching, parallel processes, or conditional flows
+DETAILED VISUAL ANALYSIS REQUIRED:
+1. STAGE BOXES: Look for "Stage 1: Research", "Stage 2: Script Writer", "Stage 3: Generate Avatar Videos" - these are organizational labels
+2. NODE BOXES: Identify each functional component box (chat message, agents, HTTP requests)
+3. CONNECTIONS: Follow EVERY arrow and line - there are multiple connection paths including parallel flows
+4. EXTERNAL MODELS: Look for circular icons labeled "Model", "OpenAI Chat Model1", etc. - these are separate model nodes
+5. TEXT LABELS: Read all visible text including partial URLs, node names, and descriptions
 
-N8N STRUCTURE REQUIREMENTS:
-- Use proper N8N node types: n8n-nodes-base.webhook, n8n-nodes-base.httpRequest, n8n-nodes-base.set, etc.
-- Create COMPLETE connections object with proper node references
-- Use descriptive node names that match what you see in the image
-- Include realistic parameters for each node type
-- Ensure every node has proper positioning
-- Add error handling and response nodes where appropriate
+CRITICAL N8N STRUCTURE REQUIREMENTS:
+- Create separate nodes for AI models shown as circular icons (use n8n-nodes-base.openAi)
+- Map ALL visible connections including:
+  * Main flow paths (solid arrows)
+  * Model connections (dashed lines to circular model icons)
+  * Parallel branches where multiple outputs exist
+  * Return paths and loops if visible
+- Use proper N8N connection syntax with exact node IDs
+- Include positioning that reflects the visual layout
 
-CONNECTION MAPPING:
-- Study the arrows and lines in the image carefully
-- Create connections for EVERY flow path you can see
-- Use proper N8N connection format: {"node": "targetNodeId", "type": "main", "index": 0}
-- Include parallel branches if multiple paths exist
-- Map conditional flows if decision points are visible
+SPECIFIC ELEMENTS TO IDENTIFY:
+- Chat trigger → webhook node
+- "Research Agent" box → agent node connected to external model
+- "Scriptwriting AI Agent" box → agent node connected to external model  
+- "Video Creator" → HTTP request node
+- HTTP Request boxes → separate httpRequest nodes
+- Circular "Model" icons → openAi model nodes
+- ALL arrows between these elements
 
-SPECIFIC NODE TYPES TO RECOGNIZE:
-- Chat/Message triggers → n8n-nodes-base.webhook or n8n-nodes-base.manualTrigger
-- AI Agents/Tools → n8n-nodes-base.agent or n8n-nodes-base.openAi
-- API calls → n8n-nodes-base.httpRequest with proper URLs
-- Data processing → n8n-nodes-base.set or n8n-nodes-base.function
-- Responses → n8n-nodes-base.respondToWebhook or n8n-nodes-base.noOp
+CONNECTION MAPPING RULES:
+- Every arrow = one connection entry
+- Dashed lines to models = model connections
+- Multiple arrows from one node = multiple connections in array
+- Parallel flows = separate connection branches
+
+Example proper connection structure:
+"sourceNodeId": {
+  "main": [
+    [
+      {"node": "targetNode1", "type": "main", "index": 0},
+      {"node": "targetNode2", "type": "main", "index": 0}
+    ]
+  ]
+}
 
 Description: ${enhancedDescription}
 Project: ${currentProjectName}
 
-Respond with ONLY valid JSON representing the COMPLETE workflow with ALL nodes and connections visible in the image.`
+Create COMPLETE JSON with ALL visible nodes and connections. Include OpenAI model nodes for the circular model icons shown.`
                     }, {
                         type: 'image',
                         source: {
