@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>N8N Workflow Generator Widget - THLS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            line-height: 1.6;
+        }
+        .demo-header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .demo-info {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .embed-code {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .usage-section {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .highlight {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-header">
+        <h1>🔧 N8N Workflow Generator Widget</h1>
+        <p><strong>Convert workflow diagrams to N8N JSON configurations</strong></p>
+        <p>Developed for The Hearing Lab Store Ltd</p>
+    </div>
+
+    <div class="demo-info">
+        <h2>📋 How to Embed This Widget</h2>
+        <p>Add this simple code to any page on your THLS website where you want the workflow generator to appear:</p>
+        
+        <div class="embed-code">
+&lt;!-- N8N Workflow Generator Widget --&gt;<br>
+&lt;div id="n8n-workflow-generator"&gt;&lt;/div&gt;<br>
+&lt;script src="https://n8n-widget.netlify.app/widget.js"&gt;&lt;/script&gt;
+        </div>
+
+        <div class="highlight">
+            <strong>✅ Benefits of the Widget Approach:</strong>
+            <ul>
+                <li>No iframe restrictions - full copy/download functionality</li>
+                <li>Responsive design that adapts to your site</li>
+                <li>Better performance and user experience</li>
+                <li>SEO friendly content integration</li>
+                <li>Easy to maintain and update</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="usage-section">
+        <h2>🎯 Features</h2>
+        <ul>
+            <li><strong>Image Analysis:</strong> Upload workflow diagrams and get accurate N8N JSON</li>
+            <li><strong>Multiple Formats:</strong> Supports PNG, JPG, GIF image formats</li>
+            <li><strong>Smart Recognition:</strong> Identifies stages, nodes, and connections</li>
+            <li><strong>Copy & Download:</strong> Easy export of generated workflows</li>
+            <li><strong>Project Management:</strong> Name and categorize your workflows</li>
+            <li><strong>THLS Branding:</strong> Consistent with your company styling</li>
+        </ul>
+    </div>
+
+    <!-- Live Widget Demo -->
+    <div id="n8n-workflow-generator"></div>
+    <script src="./widget.js"></script>
+
+    <div class="usage-section" style="margin-top: 40px;">
+        <h2>🔧 Technical Details</h2>
+        <p><strong>API Endpoint:</strong> Uses secure Netlify Functions for Claude AI integration</p>
+        <p><strong>File Size Limit:</strong> 2MB maximum for optimal processing times</p>
+        <p><strong>Processing Time:</strong> Typically 8-30 seconds depending on image complexity</p>
+        <p><strong>Compatibility:</strong> Works with all modern browsers and mobile devices</p>
+        
+        <h3>Support</h3>
+        <p>For technical support or customization requests, contact the development team at THLS.</p>
+    </div>
+</body>
+</html>
