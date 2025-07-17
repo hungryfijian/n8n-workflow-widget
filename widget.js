@@ -610,46 +610,31 @@
                     role: 'user',
                     content: [{
                         type: 'text',
-                        text: `You are an expert N8N workflow developer. Analyze this workflow diagram image with EXTREME precision and create a comprehensive N8N workflow JSON.
+                        text: `GENERATE ONLY JSON. NO TEXT. NO EXPLANATIONS.
 
-VISUAL ANALYSIS CHECKLIST:
-□ Identify ALL rectangular boxes (nodes): chat triggers, agents, HTTP requests
-□ Identify ALL circular icons (external models): OpenAI Chat Model, Model icons
-□ Map ALL solid arrows (main data flow connections)
-□ Map ALL dashed lines (model/dependency connections)
-□ Read ALL visible text: node names, URLs, stage labels, model names
-□ Note parallel flows where one node connects to multiple targets
-□ Include stage organization but focus on functional nodes
+Analyze the workflow diagram image. Output ONLY this JSON structure:
 
-REQUIRED NODE TYPES:
-- Chat trigger: n8n-nodes-base.webhook or n8n-nodes-base.manualTrigger
-- AI Agents: n8n-nodes-base.agent
-- OpenAI Models: n8n-nodes-base.openAi  
-- HTTP Requests: n8n-nodes-base.httpRequest
-- Data processing: n8n-nodes-base.set
-- Responses: n8n-nodes-base.respondToWebhook
-
-CRITICAL CONNECTION MAPPING:
-From your image, I expect to see:
-- Research Agent → PARALLEL connections to both HTTP Request AND Scriptwriting Agent
-- Each AI agent → connection to its OpenAI model
-- Sequential flow through all 3 stages
-- Multiple HTTP requests as shown
-
-EXAMPLE PARALLEL CONNECTION:
-"researchAgent": {
-  "main": [
-    [
-      {"node": "httpRequest1", "type": "main", "index": 0},
-      {"node": "scriptwritingAgent", "type": "main", "index": 0}
-    ]
-  ]
+{
+  "nodes": [
+    {"id": "node1", "type": "n8n-nodes-base.webhook", "name": "Node Name", "position": [100, 100], "parameters": {}},
+    {"id": "node2", "type": "n8n-nodes-base.agent", "name": "Node Name", "position": [300, 100], "parameters": {}}
+  ],
+  "connections": {
+    "node1": {"main": [[{"node": "node2", "type": "main", "index": 0}]]}
+  }
 }
 
-PROJECT: ${currentProjectName}
-DESCRIPTION: ${enhancedDescription}
+RULES:
+- nodes = ARRAY of objects
+- Each node needs: id, type (n8n-nodes-base.X), name, position, parameters
+- connections = object with node connections
+- NO explanatory text
+- NO markdown
+- ONLY JSON
 
-Create complete JSON with ALL nodes (including separate OpenAI model nodes) and ALL connections (including parallel flows). Output ONLY valid JSON:`
+PROJECT: ${currentProjectName}
+
+JSON ONLY:`
                     }, {
                         type: 'image',
                         source: {
@@ -792,6 +777,69 @@ Create complete JSON with ALL nodes (including separate OpenAI model nodes) and 
         document.getElementById('n8n-workflow-preview').innerHTML = '<div style="color: #999; text-align: center; padding: 50px;">No preview available</div>';
     }
 
+    // Fix common workflow structure issues from Claude
+    function fixWorkflowStructure(workflow) {
+        if (!workflow || typeof workflow !== 'object') {
+            return workflow;
+        }
+
+        // Fix nodes structure if it's an object instead of array
+        if (workflow.nodes && typeof workflow.nodes === 'object' && !Array.isArray(workflow.nodes)) {
+            console.log('Converting nodes object to array...');
+            const nodesArray = [];
+            for (const [nodeId, nodeData] of Object.entries(workflow.nodes)) {
+                if (nodeData && typeof nodeData === 'object') {
+                    // Ensure the node has an id property
+                    nodeData.id = nodeData.id || nodeId;
+                    nodesArray.push(nodeData);
+                }
+            }
+            workflow.nodes = nodesArray;
+        }
+
+        // Fix connections structure if needed
+        if (workflow.connections && typeof workflow.connections === 'object') {
+            // Connections are usually correct, but ensure proper structure
+            for (const [sourceId, connections] of Object.entries(workflow.connections)) {
+                if (connections && typeof connections === 'object') {
+                    // Ensure main connections array exists
+                    if (!connections.main) {
+                        connections.main = [];
+                    }
+                    // Ensure main is array of arrays
+                    if (!Array.isArray(connections.main)) {
+                        connections.main = [];
+                    }
+                    for (let i = 0; i < connections.main.length; i++) {
+                        if (!Array.isArray(connections.main[i])) {
+                            connections.main[i] = [];
+                        }
+                    }
+                }
+            }
+        }
+
+        // Ensure all nodes have required properties
+        if (Array.isArray(workflow.nodes)) {
+            for (let i = 0; i < workflow.nodes.length; i++) {
+                const node = workflow.nodes[i];
+                if (node && typeof node === 'object') {
+                    // Ensure required properties exist
+                    if (!node.name) {
+                        node.name = node.id || `Node ${i + 1}`;
+                    }
+                    if (!node.position || !Array.isArray(node.position)) {
+                        node.position = [100 + i * 200, 100 + Math.floor(i / 3) * 150];
+                    }
+                    if (!node.parameters || typeof node.parameters !== 'object') {
+                        node.parameters = {};
+                    }
+                }
+            }
+        }
+
+        return workflow;
+    }
     // N8N Workflow Validation
     function validateN8NWorkflow(workflow) {
         const errors = [];
@@ -799,21 +847,43 @@ Create complete JSON with ALL nodes (including separate OpenAI model nodes) and 
 
         try {
             // Check basic structure
-            if (!workflow.nodes || !Array.isArray(workflow.nodes)) {
-                errors.push('Missing or invalid nodes array');
+            if (!workflow || typeof workflow !== 'object') {
+                errors.push('Workflow is not a valid object');
                 return { isValid: false, errors, warnings };
             }
 
-            if (!workflow.connections || typeof workflow.connections !== 'object') {
-                errors.push('Missing or invalid connections object');
+            if (!workflow.nodes) {
+                errors.push('Missing nodes array');
+                return { isValid: false, errors, warnings };
+            }
+
+            if (!Array.isArray(workflow.nodes)) {
+                errors.push('Nodes is not an array');
+                return { isValid: false, errors, warnings };
+            }
+
+            if (!workflow.connections) {
+                warnings.push('Missing connections object');
+                workflow.connections = {}; // Set default empty connections
+            }
+
+            if (typeof workflow.connections !== 'object') {
+                errors.push('Connections is not an object');
                 return { isValid: false, errors, warnings };
             }
 
             // Validate nodes
             const nodeIds = new Set();
-            for (const node of workflow.nodes) {
+            for (let i = 0; i < workflow.nodes.length; i++) {
+                const node = workflow.nodes[i];
+                
+                if (!node || typeof node !== 'object') {
+                    errors.push(`Node ${i} is not a valid object`);
+                    continue;
+                }
+
                 if (!node.id) {
-                    errors.push('Node missing ID');
+                    errors.push(`Node ${i} missing ID`);
                     continue;
                 }
                 
@@ -823,49 +893,67 @@ Create complete JSON with ALL nodes (including separate OpenAI model nodes) and 
                 nodeIds.add(node.id);
 
                 if (!node.type) {
-                    errors.push(`Node ${node.id} missing type`);
+                    warnings.push(`Node ${node.id} missing type`);
                 }
 
-                if (!node.type.startsWith('n8n-nodes-base.')) {
+                if (node.type && !node.type.startsWith('n8n-nodes-base.')) {
                     warnings.push(`Node ${node.id} should use n8n-nodes-base prefix`);
                 }
 
                 if (!node.position || !Array.isArray(node.position) || node.position.length !== 2) {
                     warnings.push(`Node ${node.id} missing or invalid position`);
+                    // Set default position if missing
+                    if (!node.position) {
+                        node.position = [100 + i * 200, 100];
+                    }
+                }
+
+                if (!node.name) {
+                    warnings.push(`Node ${node.id} missing name`);
+                    node.name = node.id; // Set default name
                 }
             }
 
             // Validate connections
             for (const [sourceId, connections] of Object.entries(workflow.connections)) {
                 if (!nodeIds.has(sourceId)) {
-                    errors.push(`Connection source ${sourceId} not found in nodes`);
+                    warnings.push(`Connection source ${sourceId} not found in nodes`);
                     continue;
                 }
 
-                if (!connections.main || !Array.isArray(connections.main)) {
-                    errors.push(`Invalid connection structure for ${sourceId}`);
+                if (!connections || typeof connections !== 'object') {
+                    warnings.push(`Invalid connection structure for ${sourceId}`);
                     continue;
                 }
 
-                for (const connectionGroup of connections.main) {
-                    if (!Array.isArray(connectionGroup)) {
-                        errors.push(`Invalid connection group for ${sourceId}`);
-                        continue;
-                    }
-
-                    for (const connection of connectionGroup) {
-                        if (!connection.node) {
-                            errors.push(`Connection missing target node from ${sourceId}`);
-                        } else if (!nodeIds.has(connection.node)) {
-                            errors.push(`Connection target ${connection.node} not found`);
+                if (connections.main && Array.isArray(connections.main)) {
+                    for (let i = 0; i < connections.main.length; i++) {
+                        const connectionGroup = connections.main[i];
+                        if (!Array.isArray(connectionGroup)) {
+                            warnings.push(`Invalid connection group ${i} for ${sourceId}`);
+                            continue;
                         }
 
-                        if (connection.type !== 'main') {
-                            warnings.push(`Unusual connection type: ${connection.type}`);
-                        }
+                        for (let j = 0; j < connectionGroup.length; j++) {
+                            const connection = connectionGroup[j];
+                            if (!connection || typeof connection !== 'object') {
+                                warnings.push(`Invalid connection ${j} in group ${i} for ${sourceId}`);
+                                continue;
+                            }
 
-                        if (typeof connection.index !== 'number') {
-                            warnings.push(`Connection index should be a number`);
+                            if (!connection.node) {
+                                warnings.push(`Connection missing target node from ${sourceId}`);
+                            } else if (!nodeIds.has(connection.node)) {
+                                warnings.push(`Connection target ${connection.node} not found`);
+                            }
+
+                            if (!connection.type) {
+                                connection.type = 'main'; // Set default
+                            }
+
+                            if (typeof connection.index !== 'number') {
+                                connection.index = 0; // Set default
+                            }
                         }
                     }
                 }
@@ -889,40 +977,77 @@ Create complete JSON with ALL nodes (including separate OpenAI model nodes) and 
     // Generate Visual Preview
     function generateWorkflowPreview(workflow) {
         const previewContainer = document.getElementById('n8n-workflow-preview');
-        previewContainer.innerHTML = '';
-
-        if (!workflow.nodes || workflow.nodes.length === 0) {
-            previewContainer.innerHTML = '<div style="color: #999; text-align: center; padding: 50px;">No nodes to display</div>';
+        
+        if (!previewContainer) {
+            console.error('Preview container not found');
             return;
         }
 
-        // Create nodes
-        const nodeElements = {};
-        for (const node of workflow.nodes) {
-            const nodeElement = document.createElement('div');
-            nodeElement.className = 'n8n-node-box ' + getNodeClass(node.type);
-            nodeElement.style.left = (node.position[0] / 3) + 'px';
-            nodeElement.style.top = (node.position[1] / 3) + 'px';
-            nodeElement.textContent = node.name || node.id;
-            nodeElement.title = `${node.type}\nID: ${node.id}`;
-            
-            previewContainer.appendChild(nodeElement);
-            nodeElements[node.id] = nodeElement;
-        }
+        previewContainer.innerHTML = '';
 
-        // Create connections
-        if (workflow.connections) {
-            setTimeout(() => {
-                for (const [sourceId, connections] of Object.entries(workflow.connections)) {
-                    if (connections.main) {
-                        for (const connectionGroup of connections.main) {
-                            for (const connection of connectionGroup) {
-                                drawConnection(nodeElements[sourceId], nodeElements[connection.node], previewContainer);
+        try {
+            if (!workflow || !workflow.nodes || !Array.isArray(workflow.nodes) || workflow.nodes.length === 0) {
+                previewContainer.innerHTML = '<div style="color: #999; text-align: center; padding: 50px;">No nodes to display</div>';
+                return;
+            }
+
+            // Create nodes
+            const nodeElements = {};
+            for (let i = 0; i < workflow.nodes.length; i++) {
+                const node = workflow.nodes[i];
+                
+                if (!node || !node.id) {
+                    console.warn(`Skipping invalid node at index ${i}`);
+                    continue;
+                }
+
+                const nodeElement = document.createElement('div');
+                nodeElement.className = 'n8n-node-box ' + getNodeClass(node.type || '');
+                
+                // Handle positioning
+                let x = 100 + i * 150; // Default spacing
+                let y = 100;
+                
+                if (node.position && Array.isArray(node.position) && node.position.length >= 2) {
+                    x = Math.max(0, node.position[0] / 3);
+                    y = Math.max(0, node.position[1] / 3);
+                }
+                
+                nodeElement.style.left = x + 'px';
+                nodeElement.style.top = y + 'px';
+                nodeElement.textContent = node.name || node.id;
+                nodeElement.title = `${node.type || 'Unknown'}\nID: ${node.id}`;
+                
+                previewContainer.appendChild(nodeElement);
+                nodeElements[node.id] = nodeElement;
+            }
+
+            // Create connections
+            if (workflow.connections && typeof workflow.connections === 'object') {
+                setTimeout(() => {
+                    try {
+                        for (const [sourceId, connections] of Object.entries(workflow.connections)) {
+                            if (connections && connections.main && Array.isArray(connections.main)) {
+                                for (const connectionGroup of connections.main) {
+                                    if (Array.isArray(connectionGroup)) {
+                                        for (const connection of connectionGroup) {
+                                            if (connection && connection.node && nodeElements[sourceId] && nodeElements[connection.node]) {
+                                                drawConnection(nodeElements[sourceId], nodeElements[connection.node], previewContainer);
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
+                    } catch (connectionError) {
+                        console.warn('Error drawing connections:', connectionError);
                     }
-                }
-            }, 50);
+                }, 100);
+            }
+
+        } catch (error) {
+            console.error('Error generating preview:', error);
+            previewContainer.innerHTML = '<div style="color: #d32f2f; text-align: center; padding: 50px;">Error generating preview: ' + error.message + '</div>';
         }
     }
 
