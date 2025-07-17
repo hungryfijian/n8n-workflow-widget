@@ -610,54 +610,190 @@
                     role: 'user',
                     content: [{
                         type: 'text',
-                        text: `CRITICAL: Analyze this workflow diagram image with EXTREME precision. Read ALL visible text and create detailed N8N JSON.
+                        text: `CRITICAL: Analyze this workflow diagram and create ACCURATE N8N JSON with proper AI node types.
 
-DETAILED ANALYSIS REQUIRED:
-1. READ every text label visible in the image
-2. IDENTIFY exact API URLs shown (even partial ones like "api.firecra..." or "api.heygen.com")
-3. NOTE stage organization (Stage 1, Stage 2, Stage 3)
-4. MAP every arrow and connection precisely
-5. IDENTIFY all circular model icons as separate nodes
-6. CAPTURE parallel flows where one node connects to multiple targets
+VISUAL ANALYSIS:
+1. READ all visible text labels exactly
+2. IDENTIFY AI agents and their connected models
+3. MAP all connections precisely including parallel flows
+4. USE CORRECT N8N node types for AI components
 
-JSON STRUCTURE REQUIRED:
+CORRECT N8N NODE TYPES FOR AI:
+- AI Agents/Tools: "n8n-nodes-base.aiAgent" or "n8n-nodes-base.agent"
+- OpenAI Models: "n8n-nodes-base.openAi"
+- LLM Chains: "n8n-nodes-base.chainLlm" 
+- Chat Models: "n8n-nodes-base.chatOpenAi"
+- Webhooks: "n8n-nodes-base.webhook"
+- HTTP Requests: "n8n-nodes-base.httpRequest"
+
+REQUIRED JSON STRUCTURE:
 {
   "nodes": [
-    {"id": "triggerNode", "type": "n8n-nodes-base.webhook", "name": "EXACT_NAME_FROM_IMAGE", "position": [100, 100], "parameters": {"path": "webhook-path"}},
-    {"id": "researchAgent", "type": "n8n-nodes-base.agent", "name": "EXACT_NAME_FROM_IMAGE", "position": [300, 100], "parameters": {"agent": "research"}},
-    {"id": "researchModel", "type": "n8n-nodes-base.openAi", "name": "EXACT_MODEL_NAME", "position": [500, 80], "parameters": {"model": "gpt-4"}},
-    {"id": "httpRequest1", "type": "n8n-nodes-base.httpRequest", "name": "EXACT_NAME_FROM_IMAGE", "position": [500, 120], "parameters": {"url": "ACTUAL_URL_FROM_IMAGE", "method": "POST"}},
-    {"id": "scriptAgent", "type": "n8n-nodes-base.agent", "name": "EXACT_NAME_FROM_IMAGE", "position": [300, 300], "parameters": {"agent": "scriptwriting"}},
-    {"id": "scriptModel", "type": "n8n-nodes-base.openAi", "name": "EXACT_MODEL_NAME", "position": [500, 280], "parameters": {"model": "gpt-4"}},
-    {"id": "videoCreator", "type": "n8n-nodes-base.httpRequest", "name": "EXACT_NAME_FROM_IMAGE", "position": [300, 500], "parameters": {"url": "ACTUAL_URL_FROM_IMAGE", "method": "POST"}},
-    {"id": "videoStatus", "type": "n8n-nodes-base.httpRequest", "name": "EXACT_NAME_FROM_IMAGE", "position": [500, 500], "parameters": {"url": "ACTUAL_STATUS_URL", "method": "GET"}}
+    {
+      "id": "chatTrigger",
+      "type": "n8n-nodes-base.webhook",
+      "name": "When chat message received",
+      "position": [100, 100],
+      "parameters": {
+        "path": "chat-webhook",
+        "responseMode": "lastNode"
+      }
+    },
+    {
+      "id": "researchAgent",
+      "type": "n8n-nodes-base.aiAgent",
+      "name": "Research Agent",
+      "position": [300, 100],
+      "parameters": {
+        "agentType": "tools",
+        "systemMessage": "You are a research agent",
+        "modelName": "gpt-4"
+      }
+    },
+    {
+      "id": "researchModel",
+      "type": "n8n-nodes-base.chatOpenAi",
+      "name": "OpenAI Chat Model",
+      "position": [500, 80],
+      "parameters": {
+        "model": "gpt-4",
+        "temperature": 0.7
+      }
+    },
+    {
+      "id": "httpFirecrawl",
+      "type": "n8n-nodes-base.httpRequest",
+      "name": "HTTP Request1",
+      "position": [500, 120],
+      "parameters": {
+        "url": "https://api.firecrawl.dev/v0/scrape",
+        "method": "POST",
+        "authentication": "headerAuth",
+        "headers": {
+          "Authorization": "Bearer API_KEY"
+        }
+      }
+    },
+    {
+      "id": "scriptwritingAgent",
+      "type": "n8n-nodes-base.aiAgent",
+      "name": "Scriptwriting AI Agent",
+      "position": [300, 300],
+      "parameters": {
+        "agentType": "tools",
+        "systemMessage": "You are a scriptwriting agent",
+        "modelName": "gpt-4"
+      }
+    },
+    {
+      "id": "scriptModel",
+      "type": "n8n-nodes-base.chatOpenAi",
+      "name": "OpenAI Chat Model1",
+      "position": [500, 300],
+      "parameters": {
+        "model": "gpt-4",
+        "temperature": 0.9
+      }
+    },
+    {
+      "id": "videoCreator",
+      "type": "n8n-nodes-base.httpRequest",
+      "name": "Video Creator",
+      "position": [300, 500],
+      "parameters": {
+        "url": "https://api.heygen.com/v2/video/generate",
+        "method": "POST",
+        "authentication": "headerAuth",
+        "headers": {
+          "X-API-Key": "API_KEY"
+        }
+      }
+    },
+    {
+      "id": "videoStatus",
+      "type": "n8n-nodes-base.httpRequest",
+      "name": "HTTP Request",
+      "position": [500, 500],
+      "parameters": {
+        "url": "https://api.heygen.com/v1/video/status/{{$json.video_id}}",
+        "method": "GET",
+        "authentication": "headerAuth"
+      }
+    }
   ],
   "connections": {
-    "triggerNode": {"main": [[{"node": "researchAgent", "type": "main", "index": 0}]]},
-    "researchAgent": {"main": [[
-      {"node": "researchModel", "type": "main", "index": 0},
-      {"node": "httpRequest1", "type": "main", "index": 0},
-      {"node": "scriptAgent", "type": "main", "index": 0}
-    ]]},
-    "scriptAgent": {"main": [[
-      {"node": "scriptModel", "type": "main", "index": 0},
-      {"node": "videoCreator", "type": "main", "index": 0}
-    ]]},
-    "videoCreator": {"main": [[{"node": "videoStatus", "type": "main", "index": 0}]]}
+    "chatTrigger": {
+      "main": [
+        [
+          {
+            "node": "researchAgent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "researchAgent": {
+      "main": [
+        [
+          {
+            "node": "researchModel",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "httpFirecrawl",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "scriptwritingAgent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "scriptwritingAgent": {
+      "main": [
+        [
+          {
+            "node": "scriptModel",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "videoCreator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "videoCreator": {
+      "main": [
+        [
+          {
+            "node": "videoStatus",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   }
 }
 
 CRITICAL REQUIREMENTS:
-- Use EXACT text from image for node names
-- Include ACTUAL URLs visible (api.firecra, api.heygen.com, etc.)
-- Create separate nodes for each circular model icon
-- Map ALL connections including parallel flows
-- Position nodes to match the 3-stage layout
-- Include proper parameters based on what you see
+- Use PROPER N8N AI node types (aiAgent, chatOpenAi)
+- Include REALISTIC parameters for each node type
+- Map EXACT URLs from image (api.firecrawl.dev, api.heygen.com)
+- Create PARALLEL connections where shown
+- Use actual API endpoints and authentication methods
 
 PROJECT: ${currentProjectName}
 
-ANALYZE EVERY DETAIL. OUTPUT ONLY JSON:`
+OUTPUT ONLY COMPLETE, REALISTIC N8N JSON:`
                     }, {
                         type: 'image',
                         source: {
@@ -1239,8 +1375,8 @@ ANALYZE EVERY DETAIL. OUTPUT ONLY JSON:`
 
     function getNodeClass(nodeType) {
         if (nodeType.includes('webhook') || nodeType.includes('trigger')) return 'n8n-node-webhook';
-        if (nodeType.includes('agent')) return 'n8n-node-agent';
-        if (nodeType.includes('openAi')) return 'n8n-node-openai';
+        if (nodeType.includes('aiAgent') || nodeType.includes('agent')) return 'n8n-node-agent';
+        if (nodeType.includes('openAi') || nodeType.includes('chatOpenAi')) return 'n8n-node-openai';
         if (nodeType.includes('httpRequest')) return 'n8n-node-http';
         if (nodeType.includes('set')) return 'n8n-node-set';
         return 'n8n-node-box';
