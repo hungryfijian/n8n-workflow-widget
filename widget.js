@@ -10,9 +10,9 @@
         maxFileSize: 2 * 1024 * 1024 // 2MB
     };
 
-    // CORRECTED N8N Node Database with ACTUAL N8N node types
+    // ONLY VERIFIED WORKING N8N NODES (based on actual N8N interface)
     const N8N_NODE_DATABASE = {
-        // TRIGGERS (Actual N8N node types)
+        // WORKING TRIGGERS
         "webhook": {
             type: "n8n-nodes-base.webhook",
             name: "Webhook",
@@ -25,64 +25,8 @@
             },
             common_names: ["webhook", "http trigger", "api endpoint", "when message received", "chat trigger"]
         },
-        "manualTrigger": {
-            type: "n8n-nodes-base.manualTrigger",
-            name: "Manual Trigger",
-            category: "trigger", 
-            description: "Manually trigger workflow",
-            parameters: {},
-            common_names: ["manual", "start", "begin", "trigger"]
-        },
         
-        // AI NODES (ACTUAL working node types in N8N)
-        "openAi": {
-            type: "n8n-nodes-base.openAi",
-            name: "OpenAI",
-            category: "ai",
-            description: "OpenAI GPT models",
-            parameters: {
-                operation: "text",
-                model: "gpt-4",
-                prompt: "={{ $json.input }}",
-                temperature: 0.7,
-                maxTokens: 1000
-            },
-            common_names: ["openai", "gpt", "chat model", "ai model", "language model", "llm", "openai chat model"]
-        },
-        
-        // TOOLS/AGENTS - Using actual N8N function node since there's no "agent" node
-        "function": {
-            type: "n8n-nodes-base.function",
-            name: "Function",
-            category: "data",
-            description: "Execute JavaScript code for agent-like behavior",
-            parameters: {
-                functionCode: `// Agent function
-const agentType = 'research'; // or 'scriptwriting'
-const input = items[0].json;
-
-// Process the input based on agent type
-let result;
-if (agentType === 'research') {
-    result = { 
-        type: 'research',
-        data: input,
-        processed: true
-    };
-} else if (agentType === 'scriptwriting') {
-    result = {
-        type: 'scriptwriting', 
-        data: input,
-        processed: true
-    };
-}
-
-return [{ json: result }];`
-            },
-            common_names: ["agent", "ai agent", "tools agent", "research agent", "scriptwriting agent", "function", "code"]
-        },
-        
-        // HTTP NODES (Actual N8N node types)
+        // WORKING HTTP NODES  
         "httpRequest": {
             type: "n8n-nodes-base.httpRequest",
             name: "HTTP Request",
@@ -91,19 +35,12 @@ return [{ json: result }];`
             parameters: {
                 method: "POST",
                 url: "",
-                authentication: "none",
-                sendHeaders: true,
-                headerParameters: {
-                    parameters: []
-                },
-                sendBody: true,
-                contentType: "json",
-                jsonBody: "={{ $json }}"
+                authentication: "none"
             },
-            common_names: ["http", "api call", "request", "post", "get", "webhook call", "api request"]
+            common_names: ["http", "api call", "request", "post", "get", "video creator", "api request"]
         },
         
-        // DATA PROCESSING (Actual N8N node types)
+        // WORKING DATA NODES
         "set": {
             type: "n8n-nodes-base.set",
             name: "Set",
@@ -112,41 +49,34 @@ return [{ json: result }];`
             parameters: {
                 keepOnlySet: false,
                 values: {
-                    string: [],
-                    number: [],
-                    boolean: []
+                    string: []
                 }
             },
-            common_names: ["set", "data", "variable", "value", "assign"]
+            common_names: ["set", "data", "variable", "value", "assign", "research agent", "scriptwriting agent", "openai chat model"]
         },
         
-        // RESPONSE NODES (Actual N8N node types)
+        // WORKING CODE EXECUTION
+        "code": {
+            type: "n8n-nodes-base.code",
+            name: "Code",
+            category: "data", 
+            description: "Execute JavaScript code",
+            parameters: {
+                jsCode: "// Process data\nreturn items.map(item => ({ json: { ...item.json, processed: true } }));"
+            },
+            common_names: ["code", "javascript", "script", "function", "agent", "ai agent"]
+        },
+        
+        // WORKING RESPONSE
         "respondToWebhook": {
             type: "n8n-nodes-base.respondToWebhook",
             name: "Respond to Webhook",
             category: "response",
             description: "Send response to webhook",
             parameters: {
-                responseMode: "lastNode",
-                responseData: "={{ $json }}"
+                responseMode: "lastNode"
             },
-            common_names: ["respond", "response", "reply", "answer", "return"]
-        },
-        
-        // IF/CONDITIONAL (Actual N8N node types)
-        "if": {
-            type: "n8n-nodes-base.if",
-            name: "IF",
-            category: "conditional",
-            description: "Conditional logic",
-            parameters: {
-                conditions: {
-                    string: [],
-                    number: [],
-                    boolean: []
-                }
-            },
-            common_names: ["if", "condition", "conditional", "logic", "decision"]
+            common_names: ["respond", "response", "reply", "return"]
         }
     };
 
