@@ -799,21 +799,43 @@ Create complete JSON with ALL nodes (including separate OpenAI model nodes) and 
 
         try {
             // Check basic structure
-            if (!workflow.nodes || !Array.isArray(workflow.nodes)) {
-                errors.push('Missing or invalid nodes array');
+            if (!workflow || typeof workflow !== 'object') {
+                errors.push('Workflow is not a valid object');
                 return { isValid: false, errors, warnings };
             }
 
-            if (!workflow.connections || typeof workflow.connections !== 'object') {
-                errors.push('Missing or invalid connections object');
+            if (!workflow.nodes) {
+                errors.push('Missing nodes array');
+                return { isValid: false, errors, warnings };
+            }
+
+            if (!Array.isArray(workflow.nodes)) {
+                errors.push('Nodes is not an array');
+                return { isValid: false, errors, warnings };
+            }
+
+            if (!workflow.connections) {
+                warnings.push('Missing connections object');
+                workflow.connections = {}; // Set default empty connections
+            }
+
+            if (typeof workflow.connections !== 'object') {
+                errors.push('Connections is not an object');
                 return { isValid: false, errors, warnings };
             }
 
             // Validate nodes
             const nodeIds = new Set();
-            for (const node of workflow.nodes) {
+            for (let i = 0; i < workflow.nodes.length; i++) {
+                const node = workflow.nodes[i];
+                
+                if (!node || typeof node !== 'object') {
+                    errors.push(`Node ${i} is not a valid object`);
+                    continue;
+                }
+
                 if (!node.id) {
-                    errors.push('Node missing ID');
+                    errors.push(`Node ${i} missing ID`);
                     continue;
                 }
                 
@@ -823,49 +845,67 @@ Create complete JSON with ALL nodes (including separate OpenAI model nodes) and 
                 nodeIds.add(node.id);
 
                 if (!node.type) {
-                    errors.push(`Node ${node.id} missing type`);
+                    warnings.push(`Node ${node.id} missing type`);
                 }
 
-                if (!node.type.startsWith('n8n-nodes-base.')) {
+                if (node.type && !node.type.startsWith('n8n-nodes-base.')) {
                     warnings.push(`Node ${node.id} should use n8n-nodes-base prefix`);
                 }
 
                 if (!node.position || !Array.isArray(node.position) || node.position.length !== 2) {
                     warnings.push(`Node ${node.id} missing or invalid position`);
+                    // Set default position if missing
+                    if (!node.position) {
+                        node.position = [100 + i * 200, 100];
+                    }
+                }
+
+                if (!node.name) {
+                    warnings.push(`Node ${node.id} missing name`);
+                    node.name = node.id; // Set default name
                 }
             }
 
             // Validate connections
             for (const [sourceId, connections] of Object.entries(workflow.connections)) {
                 if (!nodeIds.has(sourceId)) {
-                    errors.push(`Connection source ${sourceId} not found in nodes`);
+                    warnings.push(`Connection source ${sourceId} not found in nodes`);
                     continue;
                 }
 
-                if (!connections.main || !Array.isArray(connections.main)) {
-                    errors.push(`Invalid connection structure for ${sourceId}`);
+                if (!connections || typeof connections !== 'object') {
+                    warnings.push(`Invalid connection structure for ${sourceId}`);
                     continue;
                 }
 
-                for (const connectionGroup of connections.main) {
-                    if (!Array.isArray(connectionGroup)) {
-                        errors.push(`Invalid connection group for ${sourceId}`);
-                        continue;
-                    }
-
-                    for (const connection of connectionGroup) {
-                        if (!connection.node) {
-                            errors.push(`Connection missing target node from ${sourceId}`);
-                        } else if (!nodeIds.has(connection.node)) {
-                            errors.push(`Connection target ${connection.node} not found`);
+                if (connections.main && Array.isArray(connections.main)) {
+                    for (let i = 0; i < connections.main.length; i++) {
+                        const connectionGroup = connections.main[i];
+                        if (!Array.isArray(connectionGroup)) {
+                            warnings.push(`Invalid connection group ${i} for ${sourceId}`);
+                            continue;
                         }
 
-                        if (connection.type !== 'main') {
-                            warnings.push(`Unusual connection type: ${connection.type}`);
-                        }
+                        for (let j = 0; j < connectionGroup.length; j++) {
+                            const connection = connectionGroup[j];
+                            if (!connection || typeof connection !== 'object') {
+                                warnings.push(`Invalid connection ${j} in group ${i} for ${sourceId}`);
+                                continue;
+                            }
 
-                        if (typeof connection.index !== 'number') {
-                            warnings.push(`Connection index should be a number`);
+                            if (!connection.node) {
+                                warnings.push(`Connection missing target node from ${sourceId}`);
+                            } else if (!nodeIds.has(connection.node)) {
+                                warnings.push(`Connection target ${connection.node} not found`);
+                            }
+
+                            if (!connection.type) {
+                                connection.type = 'main'; // Set default
+                            }
+
+                            if (typeof connection.index !== 'number') {
+                                connection.index = 0; // Set default
+                            }
                         }
                     }
                 }
@@ -889,40 +929,77 @@ Create complete JSON with ALL nodes (including separate OpenAI model nodes) and 
     // Generate Visual Preview
     function generateWorkflowPreview(workflow) {
         const previewContainer = document.getElementById('n8n-workflow-preview');
-        previewContainer.innerHTML = '';
-
-        if (!workflow.nodes || workflow.nodes.length === 0) {
-            previewContainer.innerHTML = '<div style="color: #999; text-align: center; padding: 50px;">No nodes to display</div>';
+        
+        if (!previewContainer) {
+            console.error('Preview container not found');
             return;
         }
 
-        // Create nodes
-        const nodeElements = {};
-        for (const node of workflow.nodes) {
-            const nodeElement = document.createElement('div');
-            nodeElement.className = 'n8n-node-box ' + getNodeClass(node.type);
-            nodeElement.style.left = (node.position[0] / 3) + 'px';
-            nodeElement.style.top = (node.position[1] / 3) + 'px';
-            nodeElement.textContent = node.name || node.id;
-            nodeElement.title = `${node.type}\nID: ${node.id}`;
-            
-            previewContainer.appendChild(nodeElement);
-            nodeElements[node.id] = nodeElement;
-        }
+        previewContainer.innerHTML = '';
 
-        // Create connections
-        if (workflow.connections) {
-            setTimeout(() => {
-                for (const [sourceId, connections] of Object.entries(workflow.connections)) {
-                    if (connections.main) {
-                        for (const connectionGroup of connections.main) {
-                            for (const connection of connectionGroup) {
-                                drawConnection(nodeElements[sourceId], nodeElements[connection.node], previewContainer);
+        try {
+            if (!workflow || !workflow.nodes || !Array.isArray(workflow.nodes) || workflow.nodes.length === 0) {
+                previewContainer.innerHTML = '<div style="color: #999; text-align: center; padding: 50px;">No nodes to display</div>';
+                return;
+            }
+
+            // Create nodes
+            const nodeElements = {};
+            for (let i = 0; i < workflow.nodes.length; i++) {
+                const node = workflow.nodes[i];
+                
+                if (!node || !node.id) {
+                    console.warn(`Skipping invalid node at index ${i}`);
+                    continue;
+                }
+
+                const nodeElement = document.createElement('div');
+                nodeElement.className = 'n8n-node-box ' + getNodeClass(node.type || '');
+                
+                // Handle positioning
+                let x = 100 + i * 150; // Default spacing
+                let y = 100;
+                
+                if (node.position && Array.isArray(node.position) && node.position.length >= 2) {
+                    x = Math.max(0, node.position[0] / 3);
+                    y = Math.max(0, node.position[1] / 3);
+                }
+                
+                nodeElement.style.left = x + 'px';
+                nodeElement.style.top = y + 'px';
+                nodeElement.textContent = node.name || node.id;
+                nodeElement.title = `${node.type || 'Unknown'}\nID: ${node.id}`;
+                
+                previewContainer.appendChild(nodeElement);
+                nodeElements[node.id] = nodeElement;
+            }
+
+            // Create connections
+            if (workflow.connections && typeof workflow.connections === 'object') {
+                setTimeout(() => {
+                    try {
+                        for (const [sourceId, connections] of Object.entries(workflow.connections)) {
+                            if (connections && connections.main && Array.isArray(connections.main)) {
+                                for (const connectionGroup of connections.main) {
+                                    if (Array.isArray(connectionGroup)) {
+                                        for (const connection of connectionGroup) {
+                                            if (connection && connection.node && nodeElements[sourceId] && nodeElements[connection.node]) {
+                                                drawConnection(nodeElements[sourceId], nodeElements[connection.node], previewContainer);
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
+                    } catch (connectionError) {
+                        console.warn('Error drawing connections:', connectionError);
                     }
-                }
-            }, 50);
+                }, 100);
+            }
+
+        } catch (error) {
+            console.error('Error generating preview:', error);
+            previewContainer.innerHTML = '<div style="color: #d32f2f; text-align: center; padding: 50px;">Error generating preview: ' + error.message + '</div>';
         }
     }
 
