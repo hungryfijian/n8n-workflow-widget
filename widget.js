@@ -211,9 +211,32 @@
                 .n8n-results {
                     display: none;
                     margin-top: 20px;
-                    padding: 20px;
+                }
+                
+                .n8n-results-grid {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 20px;
+                    margin-bottom: 20px;
+                }
+                
+                .n8n-json-panel {
                     background: #f8f9fa;
+                    padding: 20px;
                     border-radius: 8px;
+                }
+                
+                .n8n-preview-panel {
+                    background: #f8f9fa;
+                    padding: 20px;
+                    border-radius: 8px;
+                }
+                
+                .n8n-panel-title {
+                    font-weight: bold;
+                    margin-bottom: 15px;
+                    color: #2e4057;
+                    font-size: 1.1rem;
                 }
                 
                 .n8n-success-message {
@@ -244,7 +267,69 @@
                     white-space: pre-wrap;
                     max-height: 300px;
                     overflow-y: auto;
+                }
+                
+                .n8n-workflow-preview {
+                    border: 1px solid #ddd;
+                    border-radius: 6px;
+                    padding: 15px;
+                    background: white;
+                    min-height: 300px;
+                    position: relative;
+                    overflow: auto;
+                }
+                
+                .n8n-node-box {
+                    position: absolute;
+                    background: #e3f2fd;
+                    border: 2px solid #2196f3;
+                    border-radius: 8px;
+                    padding: 8px 12px;
+                    font-size: 11px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    min-width: 80px;
+                    text-align: center;
+                }
+                
+                .n8n-node-webhook { background: #e8f5e8; border-color: #4caf50; }
+                .n8n-node-agent { background: #fff3e0; border-color: #ff9800; }
+                .n8n-node-openai { background: #f3e5f5; border-color: #9c27b0; }
+                .n8n-node-http { background: #e1f5fe; border-color: #03a9f4; }
+                .n8n-node-set { background: #fce4ec; border-color: #e91e63; }
+                
+                .n8n-connection-line {
+                    position: absolute;
+                    background: #666;
+                    height: 2px;
+                    transform-origin: left center;
+                }
+                
+                .n8n-connection-arrow {
+                    position: absolute;
+                    width: 0;
+                    height: 0;
+                    border-left: 8px solid #666;
+                    border-top: 4px solid transparent;
+                    border-bottom: 4px solid transparent;
+                }
+                
+                .n8n-validation-status {
                     margin-bottom: 15px;
+                    padding: 10px;
+                    border-radius: 6px;
+                }
+                
+                .n8n-validation-valid {
+                    background: #d4edda;
+                    border: 1px solid #c3e6cb;
+                    color: #155724;
+                }
+                
+                .n8n-validation-invalid {
+                    background: #f8d7da;
+                    border: 1px solid #f5c6cb;
+                    color: #721c24;
                 }
                 
                 .n8n-action-buttons {
@@ -376,7 +461,24 @@
                     
                     <div class="n8n-results" id="n8n-results">
                         <div id="n8n-message-area"></div>
-                        <div class="n8n-workflow-output" id="n8n-workflow-output"></div>
+                        
+                        <div class="n8n-results-grid">
+                            <div class="n8n-json-panel">
+                                <div class="n8n-panel-title">📄 Generated JSON</div>
+                                <div id="n8n-validation-status"></div>
+                                <div class="n8n-workflow-output" id="n8n-workflow-output"></div>
+                            </div>
+                            
+                            <div class="n8n-preview-panel">
+                                <div class="n8n-panel-title">👁️ Workflow Preview</div>
+                                <div class="n8n-workflow-preview" id="n8n-workflow-preview">
+                                    <div style="color: #666; text-align: center; padding: 50px;">
+                                        Workflow preview will appear here
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="n8n-action-buttons">
                             <button class="n8n-action-btn n8n-copy-btn" onclick="N8NWidget.copyWorkflow()">
                                 📋 Copy JSON
@@ -508,29 +610,46 @@
                     role: 'user',
                     content: [{
                         type: 'text',
-                        text: `Analyze this workflow diagram and output ONLY valid JSON for N8N workflow import.
+                        text: `You are an expert N8N workflow developer. Analyze this workflow diagram image with EXTREME precision and create a comprehensive N8N workflow JSON.
 
-INSTRUCTIONS:
-- Study the image carefully
-- Identify all nodes: chat triggers, agents, HTTP requests, models
-- Map all connections shown by arrows
-- Include OpenAI model nodes for circular model icons
-- Use proper N8N node types with n8n-nodes-base prefix
+VISUAL ANALYSIS CHECKLIST:
+□ Identify ALL rectangular boxes (nodes): chat triggers, agents, HTTP requests
+□ Identify ALL circular icons (external models): OpenAI Chat Model, Model icons
+□ Map ALL solid arrows (main data flow connections)
+□ Map ALL dashed lines (model/dependency connections)
+□ Read ALL visible text: node names, URLs, stage labels, model names
+□ Note parallel flows where one node connects to multiple targets
+□ Include stage organization but focus on functional nodes
 
-REQUIRED OUTPUT FORMAT:
-{
-  "nodes": [
-    {"id": "nodeId", "type": "n8n-nodes-base.webhook", "name": "Node Name", "position": [x, y], "parameters": {}}
-  ],
-  "connections": {
-    "sourceNode": {"main": [[{"node": "targetNode", "type": "main", "index": 0}]]}
-  }
+REQUIRED NODE TYPES:
+- Chat trigger: n8n-nodes-base.webhook or n8n-nodes-base.manualTrigger
+- AI Agents: n8n-nodes-base.agent
+- OpenAI Models: n8n-nodes-base.openAi  
+- HTTP Requests: n8n-nodes-base.httpRequest
+- Data processing: n8n-nodes-base.set
+- Responses: n8n-nodes-base.respondToWebhook
+
+CRITICAL CONNECTION MAPPING:
+From your image, I expect to see:
+- Research Agent → PARALLEL connections to both HTTP Request AND Scriptwriting Agent
+- Each AI agent → connection to its OpenAI model
+- Sequential flow through all 3 stages
+- Multiple HTTP requests as shown
+
+EXAMPLE PARALLEL CONNECTION:
+"researchAgent": {
+  "main": [
+    [
+      {"node": "httpRequest1", "type": "main", "index": 0},
+      {"node": "scriptwritingAgent", "type": "main", "index": 0}
+    ]
+  ]
 }
 
 PROJECT: ${currentProjectName}
 DESCRIPTION: ${enhancedDescription}
 
-OUTPUT ONLY VALID JSON - NO EXPLANATIONS OR MARKDOWN:`
+Create complete JSON with ALL nodes (including separate OpenAI model nodes) and ALL connections (including parallel flows). Output ONLY valid JSON:`
                     }, {
                         type: 'image',
                         source: {
@@ -612,6 +731,7 @@ OUTPUT ONLY VALID JSON - NO EXPLANATIONS OR MARKDOWN:`
         const resultsSection = document.getElementById('n8n-results');
         const messageArea = document.getElementById('n8n-message-area');
         const workflowOutput = document.getElementById('n8n-workflow-output');
+        const validationStatus = document.getElementById('n8n-validation-status');
 
         resultsSection.style.display = 'block';
 
@@ -623,6 +743,26 @@ OUTPUT ONLY VALID JSON - NO EXPLANATIONS OR MARKDOWN:`
             `;
 
             workflowOutput.textContent = JSON.stringify(result.data.workflow, null, 2);
+            
+            // Show validation status
+            const validation = validateN8NWorkflow(result.data.workflow);
+            if (validation.isValid) {
+                validationStatus.innerHTML = `
+                    <div class="n8n-validation-valid">
+                        ✅ Valid N8N workflow - Ready for import
+                    </div>
+                `;
+            } else {
+                validationStatus.innerHTML = `
+                    <div class="n8n-validation-invalid">
+                        ⚠️ Validation warnings: ${validation.errors.join(', ')}
+                    </div>
+                `;
+            }
+            
+            // Generate visual preview
+            generateWorkflowPreview(result.data.workflow);
+
         } else {
             messageArea.innerHTML = `
                 <div class="n8n-error-message">
@@ -630,6 +770,8 @@ OUTPUT ONLY VALID JSON - NO EXPLANATIONS OR MARKDOWN:`
                 </div>
             `;
             workflowOutput.textContent = 'No output available';
+            validationStatus.innerHTML = '';
+            document.getElementById('n8n-workflow-preview').innerHTML = '<div style="color: #999; text-align: center; padding: 50px;">No preview available</div>';
         }
     }
 
@@ -637,6 +779,7 @@ OUTPUT ONLY VALID JSON - NO EXPLANATIONS OR MARKDOWN:`
         const resultsSection = document.getElementById('n8n-results');
         const messageArea = document.getElementById('n8n-message-area');
         const workflowOutput = document.getElementById('n8n-workflow-output');
+        const validationStatus = document.getElementById('n8n-validation-status');
 
         resultsSection.style.display = 'block';
         messageArea.innerHTML = `
@@ -645,6 +788,184 @@ OUTPUT ONLY VALID JSON - NO EXPLANATIONS OR MARKDOWN:`
             </div>
         `;
         workflowOutput.textContent = '';
+        validationStatus.innerHTML = '';
+        document.getElementById('n8n-workflow-preview').innerHTML = '<div style="color: #999; text-align: center; padding: 50px;">No preview available</div>';
+    }
+
+    // N8N Workflow Validation
+    function validateN8NWorkflow(workflow) {
+        const errors = [];
+        const warnings = [];
+
+        try {
+            // Check basic structure
+            if (!workflow.nodes || !Array.isArray(workflow.nodes)) {
+                errors.push('Missing or invalid nodes array');
+                return { isValid: false, errors, warnings };
+            }
+
+            if (!workflow.connections || typeof workflow.connections !== 'object') {
+                errors.push('Missing or invalid connections object');
+                return { isValid: false, errors, warnings };
+            }
+
+            // Validate nodes
+            const nodeIds = new Set();
+            for (const node of workflow.nodes) {
+                if (!node.id) {
+                    errors.push('Node missing ID');
+                    continue;
+                }
+                
+                if (nodeIds.has(node.id)) {
+                    errors.push(`Duplicate node ID: ${node.id}`);
+                }
+                nodeIds.add(node.id);
+
+                if (!node.type) {
+                    errors.push(`Node ${node.id} missing type`);
+                }
+
+                if (!node.type.startsWith('n8n-nodes-base.')) {
+                    warnings.push(`Node ${node.id} should use n8n-nodes-base prefix`);
+                }
+
+                if (!node.position || !Array.isArray(node.position) || node.position.length !== 2) {
+                    warnings.push(`Node ${node.id} missing or invalid position`);
+                }
+            }
+
+            // Validate connections
+            for (const [sourceId, connections] of Object.entries(workflow.connections)) {
+                if (!nodeIds.has(sourceId)) {
+                    errors.push(`Connection source ${sourceId} not found in nodes`);
+                    continue;
+                }
+
+                if (!connections.main || !Array.isArray(connections.main)) {
+                    errors.push(`Invalid connection structure for ${sourceId}`);
+                    continue;
+                }
+
+                for (const connectionGroup of connections.main) {
+                    if (!Array.isArray(connectionGroup)) {
+                        errors.push(`Invalid connection group for ${sourceId}`);
+                        continue;
+                    }
+
+                    for (const connection of connectionGroup) {
+                        if (!connection.node) {
+                            errors.push(`Connection missing target node from ${sourceId}`);
+                        } else if (!nodeIds.has(connection.node)) {
+                            errors.push(`Connection target ${connection.node} not found`);
+                        }
+
+                        if (connection.type !== 'main') {
+                            warnings.push(`Unusual connection type: ${connection.type}`);
+                        }
+
+                        if (typeof connection.index !== 'number') {
+                            warnings.push(`Connection index should be a number`);
+                        }
+                    }
+                }
+            }
+
+            return {
+                isValid: errors.length === 0,
+                errors: errors,
+                warnings: warnings
+            };
+
+        } catch (error) {
+            return {
+                isValid: false,
+                errors: ['Workflow validation failed: ' + error.message],
+                warnings: []
+            };
+        }
+    }
+
+    // Generate Visual Preview
+    function generateWorkflowPreview(workflow) {
+        const previewContainer = document.getElementById('n8n-workflow-preview');
+        previewContainer.innerHTML = '';
+
+        if (!workflow.nodes || workflow.nodes.length === 0) {
+            previewContainer.innerHTML = '<div style="color: #999; text-align: center; padding: 50px;">No nodes to display</div>';
+            return;
+        }
+
+        // Create nodes
+        const nodeElements = {};
+        for (const node of workflow.nodes) {
+            const nodeElement = document.createElement('div');
+            nodeElement.className = 'n8n-node-box ' + getNodeClass(node.type);
+            nodeElement.style.left = (node.position[0] / 3) + 'px';
+            nodeElement.style.top = (node.position[1] / 3) + 'px';
+            nodeElement.textContent = node.name || node.id;
+            nodeElement.title = `${node.type}\nID: ${node.id}`;
+            
+            previewContainer.appendChild(nodeElement);
+            nodeElements[node.id] = nodeElement;
+        }
+
+        // Create connections
+        if (workflow.connections) {
+            setTimeout(() => {
+                for (const [sourceId, connections] of Object.entries(workflow.connections)) {
+                    if (connections.main) {
+                        for (const connectionGroup of connections.main) {
+                            for (const connection of connectionGroup) {
+                                drawConnection(nodeElements[sourceId], nodeElements[connection.node], previewContainer);
+                            }
+                        }
+                    }
+                }
+            }, 50);
+        }
+    }
+
+    function getNodeClass(nodeType) {
+        if (nodeType.includes('webhook') || nodeType.includes('trigger')) return 'n8n-node-webhook';
+        if (nodeType.includes('agent')) return 'n8n-node-agent';
+        if (nodeType.includes('openAi')) return 'n8n-node-openai';
+        if (nodeType.includes('httpRequest')) return 'n8n-node-http';
+        if (nodeType.includes('set')) return 'n8n-node-set';
+        return 'n8n-node-box';
+    }
+
+    function drawConnection(sourceElement, targetElement, container) {
+        if (!sourceElement || !targetElement) return;
+
+        const sourceRect = sourceElement.getBoundingClientRect();
+        const targetRect = targetElement.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+
+        const sourceX = sourceRect.right - containerRect.left;
+        const sourceY = sourceRect.top + sourceRect.height / 2 - containerRect.top;
+        const targetX = targetRect.left - containerRect.left;
+        const targetY = targetRect.top + targetRect.height / 2 - containerRect.top;
+
+        const length = Math.sqrt(Math.pow(targetX - sourceX, 2) + Math.pow(targetY - sourceY, 2));
+        const angle = Math.atan2(targetY - sourceY, targetX - sourceX) * 180 / Math.PI;
+
+        // Connection line
+        const line = document.createElement('div');
+        line.className = 'n8n-connection-line';
+        line.style.left = sourceX + 'px';
+        line.style.top = sourceY + 'px';
+        line.style.width = length + 'px';
+        line.style.transform = `rotate(${angle}deg)`;
+        
+        // Arrow
+        const arrow = document.createElement('div');
+        arrow.className = 'n8n-connection-arrow';
+        arrow.style.left = (targetX - 8) + 'px';
+        arrow.style.top = (targetY - 4) + 'px';
+
+        container.appendChild(line);
+        container.appendChild(arrow);
     }
 
     function fileToBase64(file) {
