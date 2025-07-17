@@ -10,9 +10,9 @@
         maxFileSize: 2 * 1024 * 1024 // 2MB
     };
 
-    // N8N Node Database Integration
+    // CORRECTED N8N Node Database with ACTUAL N8N node types
     const N8N_NODE_DATABASE = {
-        // TRIGGERS
+        // TRIGGERS (Actual N8N node types)
         "webhook": {
             type: "n8n-nodes-base.webhook",
             name: "Webhook",
@@ -28,64 +28,61 @@
         "manualTrigger": {
             type: "n8n-nodes-base.manualTrigger",
             name: "Manual Trigger",
-            category: "trigger",
+            category: "trigger", 
             description: "Manually trigger workflow",
             parameters: {},
             common_names: ["manual", "start", "begin", "trigger"]
         },
         
-        // AI NODES
-        "openai": {
+        // AI NODES (ACTUAL working node types in N8N)
+        "openAi": {
             type: "n8n-nodes-base.openAi",
             name: "OpenAI",
             category: "ai",
             description: "OpenAI GPT models",
             parameters: {
-                resource: "text",
-                operation: "completion",
+                operation: "text",
                 model: "gpt-4",
-                prompt: "{{ $json.input }}",
+                prompt: "={{ $json.input }}",
                 temperature: 0.7,
                 maxTokens: 1000
             },
-            common_names: ["openai", "gpt", "chat model", "ai model", "language model", "llm"]
-        },
-        "chatOpenAi": {
-            type: "n8n-nodes-base.chatOpenAi",
-            name: "Chat OpenAI",
-            category: "ai",
-            description: "OpenAI Chat models",
-            parameters: {
-                model: "gpt-4",
-                temperature: 0.7,
-                maxTokens: 1000,
-                messages: {
-                    values: [
-                        {
-                            role: "system",
-                            content: "You are a helpful assistant"
-                        }
-                    ]
-                }
-            },
-            common_names: ["chat openai", "gpt chat", "openai chat", "chatgpt", "gpt-4", "gpt-3.5"]
-        },
-        "agent": {
-            type: "n8n-nodes-base.agent",
-            name: "AI Agent",
-            category: "ai",
-            description: "AI agent with tools",
-            parameters: {
-                agentType: "toolsAgent",
-                model: "gpt-4",
-                systemMessage: "You are a helpful AI assistant",
-                hasMemory: true,
-                tools: []
-            },
-            common_names: ["agent", "ai agent", "tools agent", "research agent", "scriptwriting agent", "writing agent"]
+            common_names: ["openai", "gpt", "chat model", "ai model", "language model", "llm", "openai chat model"]
         },
         
-        // HTTP NODES
+        // TOOLS/AGENTS - Using actual N8N function node since there's no "agent" node
+        "function": {
+            type: "n8n-nodes-base.function",
+            name: "Function",
+            category: "data",
+            description: "Execute JavaScript code for agent-like behavior",
+            parameters: {
+                functionCode: `// Agent function
+const agentType = 'research'; // or 'scriptwriting'
+const input = items[0].json;
+
+// Process the input based on agent type
+let result;
+if (agentType === 'research') {
+    result = { 
+        type: 'research',
+        data: input,
+        processed: true
+    };
+} else if (agentType === 'scriptwriting') {
+    result = {
+        type: 'scriptwriting', 
+        data: input,
+        processed: true
+    };
+}
+
+return [{ json: result }];`
+            },
+            common_names: ["agent", "ai agent", "tools agent", "research agent", "scriptwriting agent", "function", "code"]
+        },
+        
+        // HTTP NODES (Actual N8N node types)
         "httpRequest": {
             type: "n8n-nodes-base.httpRequest",
             name: "HTTP Request",
@@ -95,21 +92,25 @@
                 method: "POST",
                 url: "",
                 authentication: "none",
-                headers: {},
-                body: {
-                    mimeType: "application/json"
-                }
+                sendHeaders: true,
+                headerParameters: {
+                    parameters: []
+                },
+                sendBody: true,
+                contentType: "json",
+                jsonBody: "={{ $json }}"
             },
             common_names: ["http", "api call", "request", "post", "get", "webhook call", "api request"]
         },
         
-        // DATA PROCESSING
+        // DATA PROCESSING (Actual N8N node types)
         "set": {
             type: "n8n-nodes-base.set",
             name: "Set",
             category: "data",
             description: "Set data values",
             parameters: {
+                keepOnlySet: false,
                 values: {
                     string: [],
                     number: [],
@@ -119,7 +120,7 @@
             common_names: ["set", "data", "variable", "value", "assign"]
         },
         
-        // RESPONSE NODES
+        // RESPONSE NODES (Actual N8N node types)
         "respondToWebhook": {
             type: "n8n-nodes-base.respondToWebhook",
             name: "Respond to Webhook",
@@ -127,9 +128,25 @@
             description: "Send response to webhook",
             parameters: {
                 responseMode: "lastNode",
-                responseData: "{{ $json }}"
+                responseData: "={{ $json }}"
             },
             common_names: ["respond", "response", "reply", "answer", "return"]
+        },
+        
+        // IF/CONDITIONAL (Actual N8N node types)
+        "if": {
+            type: "n8n-nodes-base.if",
+            name: "IF",
+            category: "conditional",
+            description: "Conditional logic",
+            parameters: {
+                conditions: {
+                    string: [],
+                    number: [],
+                    boolean: []
+                }
+            },
+            common_names: ["if", "condition", "conditional", "logic", "decision"]
         }
     };
 
