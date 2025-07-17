@@ -610,60 +610,31 @@
                     role: 'user',
                     content: [{
                         type: 'text',
-                        text: `You are an expert N8N workflow developer. Analyze this workflow diagram image with EXTREME precision and create a comprehensive N8N workflow JSON.
+                        text: `GENERATE ONLY JSON. NO TEXT. NO EXPLANATIONS.
 
-VISUAL ANALYSIS CHECKLIST:
-□ Identify ALL rectangular boxes (nodes): chat triggers, agents, HTTP requests
-□ Identify ALL circular icons (external models): OpenAI Chat Model, Model icons
-□ Map ALL solid arrows (main data flow connections)
-□ Map ALL dashed lines (model/dependency connections)
-□ Read ALL visible text: node names, URLs, stage labels, model names
-□ Note parallel flows where one node connects to multiple targets
-□ Include stage organization but focus on functional nodes
+Analyze the workflow diagram image. Output ONLY this JSON structure:
 
-REQUIRED JSON STRUCTURE (CRITICAL):
 {
   "nodes": [
-    {"id": "nodeId1", "type": "n8n-nodes-base.webhook", "name": "Node Name", "position": [x, y], "parameters": {}},
-    {"id": "nodeId2", "type": "n8n-nodes-base.agent", "name": "Node Name", "position": [x, y], "parameters": {}}
+    {"id": "node1", "type": "n8n-nodes-base.webhook", "name": "Node Name", "position": [100, 100], "parameters": {}},
+    {"id": "node2", "type": "n8n-nodes-base.agent", "name": "Node Name", "position": [300, 100], "parameters": {}}
   ],
   "connections": {
-    "nodeId1": {"main": [[{"node": "nodeId2", "type": "main", "index": 0}]]}
+    "node1": {"main": [[{"node": "node2", "type": "main", "index": 0}]]}
   }
 }
 
-CRITICAL: nodes MUST be an ARRAY of objects, NOT an object of objects!
-
-REQUIRED NODE TYPES:
-- Chat trigger: n8n-nodes-base.webhook or n8n-nodes-base.manualTrigger
-- AI Agents: n8n-nodes-base.agent
-- OpenAI Models: n8n-nodes-base.openAi  
-- HTTP Requests: n8n-nodes-base.httpRequest
-- Data processing: n8n-nodes-base.set
-- Responses: n8n-nodes-base.respondToWebhook
-
-CRITICAL CONNECTION MAPPING:
-From your image, I expect to see:
-- Research Agent → PARALLEL connections to both HTTP Request AND Scriptwriting Agent
-- Each AI agent → connection to its OpenAI model
-- Sequential flow through all 3 stages
-- Multiple HTTP requests as shown
-
-EXAMPLE PARALLEL CONNECTION:
-"researchAgent": {
-  "main": [
-    [
-      {"node": "httpRequest1", "type": "main", "index": 0},
-      {"node": "scriptwritingAgent", "type": "main", "index": 0}
-    ]
-  ]
-}
+RULES:
+- nodes = ARRAY of objects
+- Each node needs: id, type (n8n-nodes-base.X), name, position, parameters
+- connections = object with node connections
+- NO explanatory text
+- NO markdown
+- ONLY JSON
 
 PROJECT: ${currentProjectName}
-DESCRIPTION: ${enhancedDescription}
 
-Create complete JSON with ALL nodes (including separate OpenAI model nodes) and ALL connections (including parallel flows). 
-CRITICAL: Use ARRAY format for nodes! Output ONLY valid JSON:`
+JSON ONLY:`
                     }, {
                         type: 'image',
                         source: {
