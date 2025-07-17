@@ -10,76 +10,6 @@
         maxFileSize: 2 * 1024 * 1024 // 2MB
     };
 
-    // ONLY VERIFIED WORKING N8N NODES (based on actual N8N interface)
-    const N8N_NODE_DATABASE = {
-        // WORKING TRIGGERS
-        "webhook": {
-            type: "n8n-nodes-base.webhook",
-            name: "Webhook",
-            category: "trigger",
-            description: "Receives HTTP requests",
-            parameters: {
-                path: "webhook-path",
-                responseMode: "lastNode",
-                httpMethod: "POST"
-            },
-            common_names: ["webhook", "http trigger", "api endpoint", "when message received", "chat trigger"]
-        },
-        
-        // WORKING HTTP NODES  
-        "httpRequest": {
-            type: "n8n-nodes-base.httpRequest",
-            name: "HTTP Request",
-            category: "http",
-            description: "Make HTTP requests",
-            parameters: {
-                method: "POST",
-                url: "",
-                authentication: "none"
-            },
-            common_names: ["http", "api call", "request", "post", "get", "video creator", "api request"]
-        },
-        
-        // WORKING DATA NODES
-        "set": {
-            type: "n8n-nodes-base.set",
-            name: "Set",
-            category: "data",
-            description: "Set data values",
-            parameters: {
-                keepOnlySet: false,
-                values: {
-                    string: []
-                }
-            },
-            common_names: ["set", "data", "variable", "value", "assign", "research agent", "scriptwriting agent", "openai chat model"]
-        },
-        
-        // WORKING CODE EXECUTION
-        "code": {
-            type: "n8n-nodes-base.code",
-            name: "Code",
-            category: "data", 
-            description: "Execute JavaScript code",
-            parameters: {
-                jsCode: "// Process data\nreturn items.map(item => ({ json: { ...item.json, processed: true } }));"
-            },
-            common_names: ["code", "javascript", "script", "function", "agent", "ai agent"]
-        },
-        
-        // WORKING RESPONSE
-        "respondToWebhook": {
-            type: "n8n-nodes-base.respondToWebhook",
-            name: "Respond to Webhook",
-            category: "response",
-            description: "Send response to webhook",
-            parameters: {
-                responseMode: "lastNode"
-            },
-            common_names: ["respond", "response", "reply", "return"]
-        }
-    };
-
     // Widget state
     let currentWorkflow = null;
     let currentProjectName = '';
@@ -344,7 +274,7 @@
                     border-radius: 6px;
                     padding: 15px;
                     background: white;
-                    min-height: 400px;
+                    min-height: 300px;
                     position: relative;
                     overflow: auto;
                 }
@@ -680,190 +610,31 @@
                     role: 'user',
                     content: [{
                         type: 'text',
-                        text: `CRITICAL: Analyze this workflow diagram and create ACCURATE N8N JSON with proper AI node types.
+                        text: `GENERATE ONLY JSON. NO TEXT. NO EXPLANATIONS.
 
-VISUAL ANALYSIS:
-1. READ all visible text labels exactly
-2. IDENTIFY AI agents and their connected models
-3. MAP all connections precisely including parallel flows
-4. USE CORRECT N8N node types for AI components
+Analyze the workflow diagram image. Output ONLY this JSON structure:
 
-CORRECT N8N NODE TYPES FOR AI:
-- AI Agents/Tools: "n8n-nodes-base.aiAgent" or "n8n-nodes-base.agent"
-- OpenAI Models: "n8n-nodes-base.openAi"
-- LLM Chains: "n8n-nodes-base.chainLlm" 
-- Chat Models: "n8n-nodes-base.chatOpenAi"
-- Webhooks: "n8n-nodes-base.webhook"
-- HTTP Requests: "n8n-nodes-base.httpRequest"
-
-REQUIRED JSON STRUCTURE:
 {
   "nodes": [
-    {
-      "id": "chatTrigger",
-      "type": "n8n-nodes-base.webhook",
-      "name": "When chat message received",
-      "position": [100, 100],
-      "parameters": {
-        "path": "chat-webhook",
-        "responseMode": "lastNode"
-      }
-    },
-    {
-      "id": "researchAgent",
-      "type": "n8n-nodes-base.aiAgent",
-      "name": "Research Agent",
-      "position": [300, 100],
-      "parameters": {
-        "agentType": "tools",
-        "systemMessage": "You are a research agent",
-        "modelName": "gpt-4"
-      }
-    },
-    {
-      "id": "researchModel",
-      "type": "n8n-nodes-base.chatOpenAi",
-      "name": "OpenAI Chat Model",
-      "position": [500, 80],
-      "parameters": {
-        "model": "gpt-4",
-        "temperature": 0.7
-      }
-    },
-    {
-      "id": "httpFirecrawl",
-      "type": "n8n-nodes-base.httpRequest",
-      "name": "HTTP Request1",
-      "position": [500, 120],
-      "parameters": {
-        "url": "https://api.firecrawl.dev/v0/scrape",
-        "method": "POST",
-        "authentication": "headerAuth",
-        "headers": {
-          "Authorization": "Bearer API_KEY"
-        }
-      }
-    },
-    {
-      "id": "scriptwritingAgent",
-      "type": "n8n-nodes-base.aiAgent",
-      "name": "Scriptwriting AI Agent",
-      "position": [300, 300],
-      "parameters": {
-        "agentType": "tools",
-        "systemMessage": "You are a scriptwriting agent",
-        "modelName": "gpt-4"
-      }
-    },
-    {
-      "id": "scriptModel",
-      "type": "n8n-nodes-base.chatOpenAi",
-      "name": "OpenAI Chat Model1",
-      "position": [500, 300],
-      "parameters": {
-        "model": "gpt-4",
-        "temperature": 0.9
-      }
-    },
-    {
-      "id": "videoCreator",
-      "type": "n8n-nodes-base.httpRequest",
-      "name": "Video Creator",
-      "position": [300, 500],
-      "parameters": {
-        "url": "https://api.heygen.com/v2/video/generate",
-        "method": "POST",
-        "authentication": "headerAuth",
-        "headers": {
-          "X-API-Key": "API_KEY"
-        }
-      }
-    },
-    {
-      "id": "videoStatus",
-      "type": "n8n-nodes-base.httpRequest",
-      "name": "HTTP Request",
-      "position": [500, 500],
-      "parameters": {
-        "url": "https://api.heygen.com/v1/video/status/{{$json.video_id}}",
-        "method": "GET",
-        "authentication": "headerAuth"
-      }
-    }
+    {"id": "node1", "type": "n8n-nodes-base.webhook", "name": "Node Name", "position": [100, 100], "parameters": {}},
+    {"id": "node2", "type": "n8n-nodes-base.agent", "name": "Node Name", "position": [300, 100], "parameters": {}}
   ],
   "connections": {
-    "chatTrigger": {
-      "main": [
-        [
-          {
-            "node": "researchAgent",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "researchAgent": {
-      "main": [
-        [
-          {
-            "node": "researchModel",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "httpFirecrawl",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "scriptwritingAgent",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "scriptwritingAgent": {
-      "main": [
-        [
-          {
-            "node": "scriptModel",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "videoCreator",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "videoCreator": {
-      "main": [
-        [
-          {
-            "node": "videoStatus",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    }
+    "node1": {"main": [[{"node": "node2", "type": "main", "index": 0}]]}
   }
 }
 
-CRITICAL REQUIREMENTS:
-- Use PROPER N8N AI node types (aiAgent, chatOpenAi)
-- Include REALISTIC parameters for each node type
-- Map EXACT URLs from image (api.firecrawl.dev, api.heygen.com)
-- Create PARALLEL connections where shown
-- Use actual API endpoints and authentication methods
+RULES:
+- nodes = ARRAY of objects
+- Each node needs: id, type (n8n-nodes-base.X), name, position, parameters
+- connections = object with node connections
+- NO explanatory text
+- NO markdown
+- ONLY JSON
 
 PROJECT: ${currentProjectName}
 
-OUTPUT ONLY COMPLETE, REALISTIC N8N JSON:`
+JSON ONLY:`
                     }, {
                         type: 'image',
                         source: {
@@ -1203,7 +974,7 @@ OUTPUT ONLY COMPLETE, REALISTIC N8N JSON:`
         }
     }
 
-    // Generate Visual Preview with better layout
+    // Generate Visual Preview
     function generateWorkflowPreview(workflow) {
         const previewContainer = document.getElementById('n8n-workflow-preview');
         
@@ -1220,10 +991,7 @@ OUTPUT ONLY COMPLETE, REALISTIC N8N JSON:`
                 return;
             }
 
-            // Calculate better positions to avoid overlap
-            const improvedPositions = calculateImprovedLayout(workflow.nodes);
-
-            // Create nodes with improved positioning
+            // Create nodes
             const nodeElements = {};
             for (let i = 0; i < workflow.nodes.length; i++) {
                 const node = workflow.nodes[i];
@@ -1236,50 +1004,35 @@ OUTPUT ONLY COMPLETE, REALISTIC N8N JSON:`
                 const nodeElement = document.createElement('div');
                 nodeElement.className = 'n8n-node-box ' + getNodeClass(node.type || '');
                 
-                // Use improved positions
-                const pos = improvedPositions[node.id] || { x: 100 + i * 180, y: 100 };
+                // Handle positioning
+                let x = 100 + i * 150; // Default spacing
+                let y = 100;
                 
-                nodeElement.style.left = pos.x + 'px';
-                nodeElement.style.top = pos.y + 'px';
-                nodeElement.style.zIndex = '10';
+                if (node.position && Array.isArray(node.position) && node.position.length >= 2) {
+                    x = Math.max(0, node.position[0] / 3);
+                    y = Math.max(0, node.position[1] / 3);
+                }
                 
-                // Truncate long names for display
-                const displayName = (node.name || node.id).length > 15 
-                    ? (node.name || node.id).substring(0, 15) + '...'
-                    : (node.name || node.id);
-                    
-                nodeElement.textContent = displayName;
-                nodeElement.title = `${node.name || node.id}\nType: ${node.type || 'Unknown'}\nID: ${node.id}`;
+                nodeElement.style.left = x + 'px';
+                nodeElement.style.top = y + 'px';
+                nodeElement.textContent = node.name || node.id;
+                nodeElement.title = `${node.type || 'Unknown'}\nID: ${node.id}`;
                 
                 previewContainer.appendChild(nodeElement);
                 nodeElements[node.id] = nodeElement;
             }
 
-            // Create connections with improved routing
+            // Create connections
             if (workflow.connections && typeof workflow.connections === 'object') {
                 setTimeout(() => {
                     try {
-                        const connectionContainer = document.createElement('div');
-                        connectionContainer.style.position = 'absolute';
-                        connectionContainer.style.top = '0';
-                        connectionContainer.style.left = '0';
-                        connectionContainer.style.width = '100%';
-                        connectionContainer.style.height = '100%';
-                        connectionContainer.style.pointerEvents = 'none';
-                        connectionContainer.style.zIndex = '1';
-                        previewContainer.appendChild(connectionContainer);
-
                         for (const [sourceId, connections] of Object.entries(workflow.connections)) {
                             if (connections && connections.main && Array.isArray(connections.main)) {
                                 for (const connectionGroup of connections.main) {
                                     if (Array.isArray(connectionGroup)) {
                                         for (const connection of connectionGroup) {
                                             if (connection && connection.node && nodeElements[sourceId] && nodeElements[connection.node]) {
-                                                drawImprovedConnection(
-                                                    nodeElements[sourceId], 
-                                                    nodeElements[connection.node], 
-                                                    connectionContainer
-                                                );
+                                                drawConnection(nodeElements[sourceId], nodeElements[connection.node], previewContainer);
                                             }
                                         }
                                     }
@@ -1292,188 +1045,19 @@ OUTPUT ONLY COMPLETE, REALISTIC N8N JSON:`
                 }, 100);
             }
 
-            // Add stage labels if we can detect them
-            addStageLabels(previewContainer, workflow.nodes);
-
         } catch (error) {
             console.error('Error generating preview:', error);
             previewContainer.innerHTML = '<div style="color: #d32f2f; text-align: center; padding: 50px;">Error generating preview: ' + error.message + '</div>';
         }
     }
 
-    // Calculate improved layout to avoid overlaps
-    function calculateImprovedLayout(nodes) {
-        const positions = {};
-        const nodeWidth = 120;
-        const nodeHeight = 40;
-        const horizontalSpacing = 200;
-        const verticalSpacing = 120;
-        const stageSpacing = 180;
-
-        // Group nodes by type and likely stage
-        const triggerNodes = nodes.filter(n => n.type && (n.type.includes('webhook') || n.type.includes('trigger')));
-        const agentNodes = nodes.filter(n => n.type && n.type.includes('agent'));
-        const modelNodes = nodes.filter(n => n.type && n.type.includes('openAi'));
-        const httpNodes = nodes.filter(n => n.type && n.type.includes('httpRequest'));
-        const otherNodes = nodes.filter(n => !triggerNodes.includes(n) && !agentNodes.includes(n) && !modelNodes.includes(n) && !httpNodes.includes(n));
-
-        let currentY = 50;
-        let currentX = 50;
-
-        // Position trigger nodes first (leftmost)
-        triggerNodes.forEach((node, i) => {
-            positions[node.id] = { x: currentX, y: currentY + i * verticalSpacing };
-        });
-
-        // Position agent nodes (main workflow)
-        currentX += horizontalSpacing;
-        agentNodes.forEach((node, i) => {
-            positions[node.id] = { x: currentX, y: currentY + i * stageSpacing };
-        });
-
-        // Position supporting nodes (models, http) to the right
-        currentX += horizontalSpacing;
-        let supportY = currentY;
-
-        modelNodes.forEach((node, i) => {
-            positions[node.id] = { x: currentX, y: supportY };
-            supportY += verticalSpacing;
-        });
-
-        httpNodes.forEach((node, i) => {
-            positions[node.id] = { x: currentX, y: supportY };
-            supportY += verticalSpacing;
-        });
-
-        // Position any remaining nodes
-        otherNodes.forEach((node, i) => {
-            positions[node.id] = { x: currentX + horizontalSpacing, y: currentY + i * verticalSpacing };
-        });
-
-        return positions;
-    }
-
-    // Add stage labels to preview
-    function addStageLabels(container, nodes) {
-        const stages = [
-            { label: 'Stage 1: Research', y: 30, color: '#e8f5e8' },
-            { label: 'Stage 2: Script Writing', y: 210, color: '#fff3e0' },
-            { label: 'Stage 3: Video Generation', y: 390, color: '#e1f5fe' }
-        ];
-
-        stages.forEach(stage => {
-            const stageLabel = document.createElement('div');
-            stageLabel.style.cssText = `
-                position: absolute;
-                left: 10px;
-                top: ${stage.y}px;
-                background: ${stage.color};
-                padding: 5px 10px;
-                border-radius: 4px;
-                font-size: 11px;
-                font-weight: bold;
-                color: #333;
-                z-index: 5;
-                border: 1px solid #ddd;
-            `;
-            stageLabel.textContent = stage.label;
-            container.appendChild(stageLabel);
-        });
-    }
-
-    // Improved connection drawing with better routing
-    function drawImprovedConnection(sourceElement, targetElement, container) {
-        if (!sourceElement || !targetElement) return;
-
-        const sourceRect = sourceElement.getBoundingClientRect();
-        const targetRect = targetElement.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
-
-        const sourceX = sourceRect.right - containerRect.left;
-        const sourceY = sourceRect.top + sourceRect.height / 2 - containerRect.top;
-        const targetX = targetRect.left - containerRect.left;
-        const targetY = targetRect.top + targetRect.height / 2 - containerRect.top;
-
-        // Create curved connection for better visual flow
-        const midX = sourceX + (targetX - sourceX) / 2;
-        
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        const d = `M ${sourceX} ${sourceY} Q ${midX} ${sourceY} ${midX} ${(sourceY + targetY) / 2} Q ${midX} ${targetY} ${targetX} ${targetY}`;
-        
-        path.setAttribute('d', d);
-        path.setAttribute('stroke', '#666');
-        path.setAttribute('stroke-width', '2');
-        path.setAttribute('fill', 'none');
-        path.setAttribute('marker-end', 'url(#arrowhead)');
-
-        // Create SVG container if it doesn't exist
-        let svg = container.querySelector('svg');
-        if (!svg) {
-            svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            svg.style.cssText = `
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                pointer-events: none;
-                z-index: 1;
-            `;
-            
-            // Add arrow marker
-            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-            const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-            marker.setAttribute('id', 'arrowhead');
-            marker.setAttribute('markerWidth', '10');
-            marker.setAttribute('markerHeight', '7');
-            marker.setAttribute('refX', '9');
-            marker.setAttribute('refY', '3.5');
-            marker.setAttribute('orient', 'auto');
-            
-            const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-            polygon.setAttribute('points', '0 0, 10 3.5, 0 7');
-            polygon.setAttribute('fill', '#666');
-            
-            marker.appendChild(polygon);
-            defs.appendChild(marker);
-            svg.appendChild(defs);
-            container.appendChild(svg);
-        }
-
-        svg.appendChild(path);
-    }
-
     function getNodeClass(nodeType) {
         if (nodeType.includes('webhook') || nodeType.includes('trigger')) return 'n8n-node-webhook';
-        if (nodeType.includes('agent') || nodeType.includes('aiAgent')) return 'n8n-node-agent';
-        if (nodeType.includes('openAi') || nodeType.includes('chatOpenAi')) return 'n8n-node-openai';
+        if (nodeType.includes('agent')) return 'n8n-node-agent';
+        if (nodeType.includes('openAi')) return 'n8n-node-openai';
         if (nodeType.includes('httpRequest')) return 'n8n-node-http';
         if (nodeType.includes('set')) return 'n8n-node-set';
         return 'n8n-node-box';
-    }
-
-    // Helper function to find node by name
-    function findNodeByName(searchTerm) {
-        const term = searchTerm.toLowerCase();
-        
-        for (const [key, node] of Object.entries(N8N_NODE_DATABASE)) {
-            // Check exact match
-            if (node.name.toLowerCase().includes(term)) {
-                return node;
-            }
-            
-            // Check common names
-            if (node.common_names.some(name => name.includes(term) || term.includes(name))) {
-                return node;
-            }
-            
-            // Check description
-            if (node.description.toLowerCase().includes(term)) {
-                return node;
-            }
-        }
-        
-        return null;
     }
 
     function drawConnection(sourceElement, targetElement, container) {
