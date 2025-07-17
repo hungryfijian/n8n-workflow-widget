@@ -10,6 +10,129 @@
         maxFileSize: 2 * 1024 * 1024 // 2MB
     };
 
+    // N8N Node Database Integration
+    const N8N_NODE_DATABASE = {
+        // TRIGGERS
+        "webhook": {
+            type: "n8n-nodes-base.webhook",
+            name: "Webhook",
+            category: "trigger",
+            description: "Receives HTTP requests",
+            parameters: {
+                path: "webhook-path",
+                responseMode: "lastNode",
+                httpMethod: "POST"
+            },
+            common_names: ["webhook", "http trigger", "api endpoint", "when message received", "chat trigger"]
+        },
+        "manualTrigger": {
+            type: "n8n-nodes-base.manualTrigger",
+            name: "Manual Trigger",
+            category: "trigger",
+            description: "Manually trigger workflow",
+            parameters: {},
+            common_names: ["manual", "start", "begin", "trigger"]
+        },
+        
+        // AI NODES
+        "openai": {
+            type: "n8n-nodes-base.openAi",
+            name: "OpenAI",
+            category: "ai",
+            description: "OpenAI GPT models",
+            parameters: {
+                resource: "text",
+                operation: "completion",
+                model: "gpt-4",
+                prompt: "{{ $json.input }}",
+                temperature: 0.7,
+                maxTokens: 1000
+            },
+            common_names: ["openai", "gpt", "chat model", "ai model", "language model", "llm"]
+        },
+        "chatOpenAi": {
+            type: "n8n-nodes-base.chatOpenAi",
+            name: "Chat OpenAI",
+            category: "ai",
+            description: "OpenAI Chat models",
+            parameters: {
+                model: "gpt-4",
+                temperature: 0.7,
+                maxTokens: 1000,
+                messages: {
+                    values: [
+                        {
+                            role: "system",
+                            content: "You are a helpful assistant"
+                        }
+                    ]
+                }
+            },
+            common_names: ["chat openai", "gpt chat", "openai chat", "chatgpt", "gpt-4", "gpt-3.5"]
+        },
+        "agent": {
+            type: "n8n-nodes-base.agent",
+            name: "AI Agent",
+            category: "ai",
+            description: "AI agent with tools",
+            parameters: {
+                agentType: "toolsAgent",
+                model: "gpt-4",
+                systemMessage: "You are a helpful AI assistant",
+                hasMemory: true,
+                tools: []
+            },
+            common_names: ["agent", "ai agent", "tools agent", "research agent", "scriptwriting agent", "writing agent"]
+        },
+        
+        // HTTP NODES
+        "httpRequest": {
+            type: "n8n-nodes-base.httpRequest",
+            name: "HTTP Request",
+            category: "http",
+            description: "Make HTTP requests",
+            parameters: {
+                method: "POST",
+                url: "",
+                authentication: "none",
+                headers: {},
+                body: {
+                    mimeType: "application/json"
+                }
+            },
+            common_names: ["http", "api call", "request", "post", "get", "webhook call", "api request"]
+        },
+        
+        // DATA PROCESSING
+        "set": {
+            type: "n8n-nodes-base.set",
+            name: "Set",
+            category: "data",
+            description: "Set data values",
+            parameters: {
+                values: {
+                    string: [],
+                    number: [],
+                    boolean: []
+                }
+            },
+            common_names: ["set", "data", "variable", "value", "assign"]
+        },
+        
+        // RESPONSE NODES
+        "respondToWebhook": {
+            type: "n8n-nodes-base.respondToWebhook",
+            name: "Respond to Webhook",
+            category: "response",
+            description: "Send response to webhook",
+            parameters: {
+                responseMode: "lastNode",
+                responseData: "{{ $json }}"
+            },
+            common_names: ["respond", "response", "reply", "answer", "return"]
+        }
+    };
+
     // Widget state
     let currentWorkflow = null;
     let currentProjectName = '';
@@ -1375,11 +1498,35 @@ OUTPUT ONLY COMPLETE, REALISTIC N8N JSON:`
 
     function getNodeClass(nodeType) {
         if (nodeType.includes('webhook') || nodeType.includes('trigger')) return 'n8n-node-webhook';
-        if (nodeType.includes('aiAgent') || nodeType.includes('agent')) return 'n8n-node-agent';
+        if (nodeType.includes('agent') || nodeType.includes('aiAgent')) return 'n8n-node-agent';
         if (nodeType.includes('openAi') || nodeType.includes('chatOpenAi')) return 'n8n-node-openai';
         if (nodeType.includes('httpRequest')) return 'n8n-node-http';
         if (nodeType.includes('set')) return 'n8n-node-set';
         return 'n8n-node-box';
+    }
+
+    // Helper function to find node by name
+    function findNodeByName(searchTerm) {
+        const term = searchTerm.toLowerCase();
+        
+        for (const [key, node] of Object.entries(N8N_NODE_DATABASE)) {
+            // Check exact match
+            if (node.name.toLowerCase().includes(term)) {
+                return node;
+            }
+            
+            // Check common names
+            if (node.common_names.some(name => name.includes(term) || term.includes(name))) {
+                return node;
+            }
+            
+            // Check description
+            if (node.description.toLowerCase().includes(term)) {
+                return node;
+            }
+        }
+        
+        return null;
     }
 
     function drawConnection(sourceElement, targetElement, container) {
