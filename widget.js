@@ -508,54 +508,29 @@
                     role: 'user',
                     content: [{
                         type: 'text',
-                        text: `You are an expert N8N workflow developer. Analyze this workflow diagram image with EXTREME precision and create a comprehensive N8N workflow JSON.
+                        text: `Analyze this workflow diagram and output ONLY valid JSON for N8N workflow import.
 
-DETAILED VISUAL ANALYSIS REQUIRED:
-1. STAGE BOXES: Look for "Stage 1: Research", "Stage 2: Script Writer", "Stage 3: Generate Avatar Videos" - these are organizational labels
-2. NODE BOXES: Identify each functional component box (chat message, agents, HTTP requests)
-3. CONNECTIONS: Follow EVERY arrow and line - there are multiple connection paths including parallel flows
-4. EXTERNAL MODELS: Look for circular icons labeled "Model", "OpenAI Chat Model1", etc. - these are separate model nodes
-5. TEXT LABELS: Read all visible text including partial URLs, node names, and descriptions
+INSTRUCTIONS:
+- Study the image carefully
+- Identify all nodes: chat triggers, agents, HTTP requests, models
+- Map all connections shown by arrows
+- Include OpenAI model nodes for circular model icons
+- Use proper N8N node types with n8n-nodes-base prefix
 
-CRITICAL N8N STRUCTURE REQUIREMENTS:
-- Create separate nodes for AI models shown as circular icons (use n8n-nodes-base.openAi)
-- Map ALL visible connections including:
-  * Main flow paths (solid arrows)
-  * Model connections (dashed lines to circular model icons)
-  * Parallel branches where multiple outputs exist
-  * Return paths and loops if visible
-- Use proper N8N connection syntax with exact node IDs
-- Include positioning that reflects the visual layout
-
-SPECIFIC ELEMENTS TO IDENTIFY:
-- Chat trigger → webhook node
-- "Research Agent" box → agent node connected to external model
-- "Scriptwriting AI Agent" box → agent node connected to external model  
-- "Video Creator" → HTTP request node
-- HTTP Request boxes → separate httpRequest nodes
-- Circular "Model" icons → openAi model nodes
-- ALL arrows between these elements
-
-CONNECTION MAPPING RULES:
-- Every arrow = one connection entry
-- Dashed lines to models = model connections
-- Multiple arrows from one node = multiple connections in array
-- Parallel flows = separate connection branches
-
-Example proper connection structure:
-"sourceNodeId": {
-  "main": [
-    [
-      {"node": "targetNode1", "type": "main", "index": 0},
-      {"node": "targetNode2", "type": "main", "index": 0}
-    ]
-  ]
+REQUIRED OUTPUT FORMAT:
+{
+  "nodes": [
+    {"id": "nodeId", "type": "n8n-nodes-base.webhook", "name": "Node Name", "position": [x, y], "parameters": {}}
+  ],
+  "connections": {
+    "sourceNode": {"main": [[{"node": "targetNode", "type": "main", "index": 0}]]}
+  }
 }
 
-Description: ${enhancedDescription}
-Project: ${currentProjectName}
+PROJECT: ${currentProjectName}
+DESCRIPTION: ${enhancedDescription}
 
-Create COMPLETE JSON with ALL visible nodes and connections. Include OpenAI model nodes for the circular model icons shown.`
+OUTPUT ONLY VALID JSON - NO EXPLANATIONS OR MARKDOWN:`
                     }, {
                         type: 'image',
                         source: {
