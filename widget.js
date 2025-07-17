@@ -621,6 +621,19 @@ VISUAL ANALYSIS CHECKLIST:
 □ Note parallel flows where one node connects to multiple targets
 □ Include stage organization but focus on functional nodes
 
+REQUIRED JSON STRUCTURE (CRITICAL):
+{
+  "nodes": [
+    {"id": "nodeId1", "type": "n8n-nodes-base.webhook", "name": "Node Name", "position": [x, y], "parameters": {}},
+    {"id": "nodeId2", "type": "n8n-nodes-base.agent", "name": "Node Name", "position": [x, y], "parameters": {}}
+  ],
+  "connections": {
+    "nodeId1": {"main": [[{"node": "nodeId2", "type": "main", "index": 0}]]}
+  }
+}
+
+CRITICAL: nodes MUST be an ARRAY of objects, NOT an object of objects!
+
 REQUIRED NODE TYPES:
 - Chat trigger: n8n-nodes-base.webhook or n8n-nodes-base.manualTrigger
 - AI Agents: n8n-nodes-base.agent
@@ -649,7 +662,8 @@ EXAMPLE PARALLEL CONNECTION:
 PROJECT: ${currentProjectName}
 DESCRIPTION: ${enhancedDescription}
 
-Create complete JSON with ALL nodes (including separate OpenAI model nodes) and ALL connections (including parallel flows). Output ONLY valid JSON:`
+Create complete JSON with ALL nodes (including separate OpenAI model nodes) and ALL connections (including parallel flows). 
+CRITICAL: Use ARRAY format for nodes! Output ONLY valid JSON:`
                     }, {
                         type: 'image',
                         source: {
@@ -792,6 +806,69 @@ Create complete JSON with ALL nodes (including separate OpenAI model nodes) and 
         document.getElementById('n8n-workflow-preview').innerHTML = '<div style="color: #999; text-align: center; padding: 50px;">No preview available</div>';
     }
 
+    // Fix common workflow structure issues from Claude
+    function fixWorkflowStructure(workflow) {
+        if (!workflow || typeof workflow !== 'object') {
+            return workflow;
+        }
+
+        // Fix nodes structure if it's an object instead of array
+        if (workflow.nodes && typeof workflow.nodes === 'object' && !Array.isArray(workflow.nodes)) {
+            console.log('Converting nodes object to array...');
+            const nodesArray = [];
+            for (const [nodeId, nodeData] of Object.entries(workflow.nodes)) {
+                if (nodeData && typeof nodeData === 'object') {
+                    // Ensure the node has an id property
+                    nodeData.id = nodeData.id || nodeId;
+                    nodesArray.push(nodeData);
+                }
+            }
+            workflow.nodes = nodesArray;
+        }
+
+        // Fix connections structure if needed
+        if (workflow.connections && typeof workflow.connections === 'object') {
+            // Connections are usually correct, but ensure proper structure
+            for (const [sourceId, connections] of Object.entries(workflow.connections)) {
+                if (connections && typeof connections === 'object') {
+                    // Ensure main connections array exists
+                    if (!connections.main) {
+                        connections.main = [];
+                    }
+                    // Ensure main is array of arrays
+                    if (!Array.isArray(connections.main)) {
+                        connections.main = [];
+                    }
+                    for (let i = 0; i < connections.main.length; i++) {
+                        if (!Array.isArray(connections.main[i])) {
+                            connections.main[i] = [];
+                        }
+                    }
+                }
+            }
+        }
+
+        // Ensure all nodes have required properties
+        if (Array.isArray(workflow.nodes)) {
+            for (let i = 0; i < workflow.nodes.length; i++) {
+                const node = workflow.nodes[i];
+                if (node && typeof node === 'object') {
+                    // Ensure required properties exist
+                    if (!node.name) {
+                        node.name = node.id || `Node ${i + 1}`;
+                    }
+                    if (!node.position || !Array.isArray(node.position)) {
+                        node.position = [100 + i * 200, 100 + Math.floor(i / 3) * 150];
+                    }
+                    if (!node.parameters || typeof node.parameters !== 'object') {
+                        node.parameters = {};
+                    }
+                }
+            }
+        }
+
+        return workflow;
+    }
     // N8N Workflow Validation
     function validateN8NWorkflow(workflow) {
         const errors = [];
