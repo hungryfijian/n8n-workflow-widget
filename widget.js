@@ -274,7 +274,7 @@
                     border-radius: 6px;
                     padding: 15px;
                     background: white;
-                    min-height: 300px;
+                    min-height: 400px;
                     position: relative;
                     overflow: auto;
                 }
@@ -610,31 +610,54 @@
                     role: 'user',
                     content: [{
                         type: 'text',
-                        text: `GENERATE ONLY JSON. NO TEXT. NO EXPLANATIONS.
+                        text: `CRITICAL: Analyze this workflow diagram image with EXTREME precision. Read ALL visible text and create detailed N8N JSON.
 
-Analyze the workflow diagram image. Output ONLY this JSON structure:
+DETAILED ANALYSIS REQUIRED:
+1. READ every text label visible in the image
+2. IDENTIFY exact API URLs shown (even partial ones like "api.firecra..." or "api.heygen.com")
+3. NOTE stage organization (Stage 1, Stage 2, Stage 3)
+4. MAP every arrow and connection precisely
+5. IDENTIFY all circular model icons as separate nodes
+6. CAPTURE parallel flows where one node connects to multiple targets
 
+JSON STRUCTURE REQUIRED:
 {
   "nodes": [
-    {"id": "node1", "type": "n8n-nodes-base.webhook", "name": "Node Name", "position": [100, 100], "parameters": {}},
-    {"id": "node2", "type": "n8n-nodes-base.agent", "name": "Node Name", "position": [300, 100], "parameters": {}}
+    {"id": "triggerNode", "type": "n8n-nodes-base.webhook", "name": "EXACT_NAME_FROM_IMAGE", "position": [100, 100], "parameters": {"path": "webhook-path"}},
+    {"id": "researchAgent", "type": "n8n-nodes-base.agent", "name": "EXACT_NAME_FROM_IMAGE", "position": [300, 100], "parameters": {"agent": "research"}},
+    {"id": "researchModel", "type": "n8n-nodes-base.openAi", "name": "EXACT_MODEL_NAME", "position": [500, 80], "parameters": {"model": "gpt-4"}},
+    {"id": "httpRequest1", "type": "n8n-nodes-base.httpRequest", "name": "EXACT_NAME_FROM_IMAGE", "position": [500, 120], "parameters": {"url": "ACTUAL_URL_FROM_IMAGE", "method": "POST"}},
+    {"id": "scriptAgent", "type": "n8n-nodes-base.agent", "name": "EXACT_NAME_FROM_IMAGE", "position": [300, 300], "parameters": {"agent": "scriptwriting"}},
+    {"id": "scriptModel", "type": "n8n-nodes-base.openAi", "name": "EXACT_MODEL_NAME", "position": [500, 280], "parameters": {"model": "gpt-4"}},
+    {"id": "videoCreator", "type": "n8n-nodes-base.httpRequest", "name": "EXACT_NAME_FROM_IMAGE", "position": [300, 500], "parameters": {"url": "ACTUAL_URL_FROM_IMAGE", "method": "POST"}},
+    {"id": "videoStatus", "type": "n8n-nodes-base.httpRequest", "name": "EXACT_NAME_FROM_IMAGE", "position": [500, 500], "parameters": {"url": "ACTUAL_STATUS_URL", "method": "GET"}}
   ],
   "connections": {
-    "node1": {"main": [[{"node": "node2", "type": "main", "index": 0}]]}
+    "triggerNode": {"main": [[{"node": "researchAgent", "type": "main", "index": 0}]]},
+    "researchAgent": {"main": [[
+      {"node": "researchModel", "type": "main", "index": 0},
+      {"node": "httpRequest1", "type": "main", "index": 0},
+      {"node": "scriptAgent", "type": "main", "index": 0}
+    ]]},
+    "scriptAgent": {"main": [[
+      {"node": "scriptModel", "type": "main", "index": 0},
+      {"node": "videoCreator", "type": "main", "index": 0}
+    ]]},
+    "videoCreator": {"main": [[{"node": "videoStatus", "type": "main", "index": 0}]]}
   }
 }
 
-RULES:
-- nodes = ARRAY of objects
-- Each node needs: id, type (n8n-nodes-base.X), name, position, parameters
-- connections = object with node connections
-- NO explanatory text
-- NO markdown
-- ONLY JSON
+CRITICAL REQUIREMENTS:
+- Use EXACT text from image for node names
+- Include ACTUAL URLs visible (api.firecra, api.heygen.com, etc.)
+- Create separate nodes for each circular model icon
+- Map ALL connections including parallel flows
+- Position nodes to match the 3-stage layout
+- Include proper parameters based on what you see
 
 PROJECT: ${currentProjectName}
 
-JSON ONLY:`
+ANALYZE EVERY DETAIL. OUTPUT ONLY JSON:`
                     }, {
                         type: 'image',
                         source: {
@@ -974,7 +997,7 @@ JSON ONLY:`
         }
     }
 
-    // Generate Visual Preview
+    // Generate Visual Preview with better layout
     function generateWorkflowPreview(workflow) {
         const previewContainer = document.getElementById('n8n-workflow-preview');
         
@@ -991,7 +1014,10 @@ JSON ONLY:`
                 return;
             }
 
-            // Create nodes
+            // Calculate better positions to avoid overlap
+            const improvedPositions = calculateImprovedLayout(workflow.nodes);
+
+            // Create nodes with improved positioning
             const nodeElements = {};
             for (let i = 0; i < workflow.nodes.length; i++) {
                 const node = workflow.nodes[i];
@@ -1004,35 +1030,50 @@ JSON ONLY:`
                 const nodeElement = document.createElement('div');
                 nodeElement.className = 'n8n-node-box ' + getNodeClass(node.type || '');
                 
-                // Handle positioning
-                let x = 100 + i * 150; // Default spacing
-                let y = 100;
+                // Use improved positions
+                const pos = improvedPositions[node.id] || { x: 100 + i * 180, y: 100 };
                 
-                if (node.position && Array.isArray(node.position) && node.position.length >= 2) {
-                    x = Math.max(0, node.position[0] / 3);
-                    y = Math.max(0, node.position[1] / 3);
-                }
+                nodeElement.style.left = pos.x + 'px';
+                nodeElement.style.top = pos.y + 'px';
+                nodeElement.style.zIndex = '10';
                 
-                nodeElement.style.left = x + 'px';
-                nodeElement.style.top = y + 'px';
-                nodeElement.textContent = node.name || node.id;
-                nodeElement.title = `${node.type || 'Unknown'}\nID: ${node.id}`;
+                // Truncate long names for display
+                const displayName = (node.name || node.id).length > 15 
+                    ? (node.name || node.id).substring(0, 15) + '...'
+                    : (node.name || node.id);
+                    
+                nodeElement.textContent = displayName;
+                nodeElement.title = `${node.name || node.id}\nType: ${node.type || 'Unknown'}\nID: ${node.id}`;
                 
                 previewContainer.appendChild(nodeElement);
                 nodeElements[node.id] = nodeElement;
             }
 
-            // Create connections
+            // Create connections with improved routing
             if (workflow.connections && typeof workflow.connections === 'object') {
                 setTimeout(() => {
                     try {
+                        const connectionContainer = document.createElement('div');
+                        connectionContainer.style.position = 'absolute';
+                        connectionContainer.style.top = '0';
+                        connectionContainer.style.left = '0';
+                        connectionContainer.style.width = '100%';
+                        connectionContainer.style.height = '100%';
+                        connectionContainer.style.pointerEvents = 'none';
+                        connectionContainer.style.zIndex = '1';
+                        previewContainer.appendChild(connectionContainer);
+
                         for (const [sourceId, connections] of Object.entries(workflow.connections)) {
                             if (connections && connections.main && Array.isArray(connections.main)) {
                                 for (const connectionGroup of connections.main) {
                                     if (Array.isArray(connectionGroup)) {
                                         for (const connection of connectionGroup) {
                                             if (connection && connection.node && nodeElements[sourceId] && nodeElements[connection.node]) {
-                                                drawConnection(nodeElements[sourceId], nodeElements[connection.node], previewContainer);
+                                                drawImprovedConnection(
+                                                    nodeElements[sourceId], 
+                                                    nodeElements[connection.node], 
+                                                    connectionContainer
+                                                );
                                             }
                                         }
                                     }
@@ -1045,10 +1086,155 @@ JSON ONLY:`
                 }, 100);
             }
 
+            // Add stage labels if we can detect them
+            addStageLabels(previewContainer, workflow.nodes);
+
         } catch (error) {
             console.error('Error generating preview:', error);
             previewContainer.innerHTML = '<div style="color: #d32f2f; text-align: center; padding: 50px;">Error generating preview: ' + error.message + '</div>';
         }
+    }
+
+    // Calculate improved layout to avoid overlaps
+    function calculateImprovedLayout(nodes) {
+        const positions = {};
+        const nodeWidth = 120;
+        const nodeHeight = 40;
+        const horizontalSpacing = 200;
+        const verticalSpacing = 120;
+        const stageSpacing = 180;
+
+        // Group nodes by type and likely stage
+        const triggerNodes = nodes.filter(n => n.type && (n.type.includes('webhook') || n.type.includes('trigger')));
+        const agentNodes = nodes.filter(n => n.type && n.type.includes('agent'));
+        const modelNodes = nodes.filter(n => n.type && n.type.includes('openAi'));
+        const httpNodes = nodes.filter(n => n.type && n.type.includes('httpRequest'));
+        const otherNodes = nodes.filter(n => !triggerNodes.includes(n) && !agentNodes.includes(n) && !modelNodes.includes(n) && !httpNodes.includes(n));
+
+        let currentY = 50;
+        let currentX = 50;
+
+        // Position trigger nodes first (leftmost)
+        triggerNodes.forEach((node, i) => {
+            positions[node.id] = { x: currentX, y: currentY + i * verticalSpacing };
+        });
+
+        // Position agent nodes (main workflow)
+        currentX += horizontalSpacing;
+        agentNodes.forEach((node, i) => {
+            positions[node.id] = { x: currentX, y: currentY + i * stageSpacing };
+        });
+
+        // Position supporting nodes (models, http) to the right
+        currentX += horizontalSpacing;
+        let supportY = currentY;
+
+        modelNodes.forEach((node, i) => {
+            positions[node.id] = { x: currentX, y: supportY };
+            supportY += verticalSpacing;
+        });
+
+        httpNodes.forEach((node, i) => {
+            positions[node.id] = { x: currentX, y: supportY };
+            supportY += verticalSpacing;
+        });
+
+        // Position any remaining nodes
+        otherNodes.forEach((node, i) => {
+            positions[node.id] = { x: currentX + horizontalSpacing, y: currentY + i * verticalSpacing };
+        });
+
+        return positions;
+    }
+
+    // Add stage labels to preview
+    function addStageLabels(container, nodes) {
+        const stages = [
+            { label: 'Stage 1: Research', y: 30, color: '#e8f5e8' },
+            { label: 'Stage 2: Script Writing', y: 210, color: '#fff3e0' },
+            { label: 'Stage 3: Video Generation', y: 390, color: '#e1f5fe' }
+        ];
+
+        stages.forEach(stage => {
+            const stageLabel = document.createElement('div');
+            stageLabel.style.cssText = `
+                position: absolute;
+                left: 10px;
+                top: ${stage.y}px;
+                background: ${stage.color};
+                padding: 5px 10px;
+                border-radius: 4px;
+                font-size: 11px;
+                font-weight: bold;
+                color: #333;
+                z-index: 5;
+                border: 1px solid #ddd;
+            `;
+            stageLabel.textContent = stage.label;
+            container.appendChild(stageLabel);
+        });
+    }
+
+    // Improved connection drawing with better routing
+    function drawImprovedConnection(sourceElement, targetElement, container) {
+        if (!sourceElement || !targetElement) return;
+
+        const sourceRect = sourceElement.getBoundingClientRect();
+        const targetRect = targetElement.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+
+        const sourceX = sourceRect.right - containerRect.left;
+        const sourceY = sourceRect.top + sourceRect.height / 2 - containerRect.top;
+        const targetX = targetRect.left - containerRect.left;
+        const targetY = targetRect.top + targetRect.height / 2 - containerRect.top;
+
+        // Create curved connection for better visual flow
+        const midX = sourceX + (targetX - sourceX) / 2;
+        
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const d = `M ${sourceX} ${sourceY} Q ${midX} ${sourceY} ${midX} ${(sourceY + targetY) / 2} Q ${midX} ${targetY} ${targetX} ${targetY}`;
+        
+        path.setAttribute('d', d);
+        path.setAttribute('stroke', '#666');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('fill', 'none');
+        path.setAttribute('marker-end', 'url(#arrowhead)');
+
+        // Create SVG container if it doesn't exist
+        let svg = container.querySelector('svg');
+        if (!svg) {
+            svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.style.cssText = `
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: 1;
+            `;
+            
+            // Add arrow marker
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+            marker.setAttribute('id', 'arrowhead');
+            marker.setAttribute('markerWidth', '10');
+            marker.setAttribute('markerHeight', '7');
+            marker.setAttribute('refX', '9');
+            marker.setAttribute('refY', '3.5');
+            marker.setAttribute('orient', 'auto');
+            
+            const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            polygon.setAttribute('points', '0 0, 10 3.5, 0 7');
+            polygon.setAttribute('fill', '#666');
+            
+            marker.appendChild(polygon);
+            defs.appendChild(marker);
+            svg.appendChild(defs);
+            container.appendChild(svg);
+        }
+
+        svg.appendChild(path);
     }
 
     function getNodeClass(nodeType) {
