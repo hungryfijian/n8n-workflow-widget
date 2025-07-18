@@ -5,7 +5,7 @@
 
     // Widget configuration
     const WIDGET_CONFIG = {
-        apiEndpoint: 'https://n8n-generator.netlify.app/.netlify/functions/claude-api',
+        apiEndpoint: 'https://n8n-workflow-widget.netlify.app/.netlify/functions/claude-api',  // ✅ Fixed URL
         containerId: 'n8n-workflow-generator',
         maxFileSize: 2 * 1024 * 1024 // 2MB
     };
