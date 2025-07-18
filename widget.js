@@ -1115,6 +1115,9 @@ OUTPUT ONLY COMPLETE, REALISTIC N8N JSON:`
                 }]
             };
 
+            console.log('Making request to:', WIDGET_CONFIG.apiEndpoint);
+            console.log('Request payload size:', JSON.stringify(claudeRequest).length);
+
             // Make request to Netlify function
             const response = await fetch(WIDGET_CONFIG.apiEndpoint, {
                 method: 'POST',
@@ -1124,12 +1127,18 @@ OUTPUT ONLY COMPLETE, REALISTIC N8N JSON:`
                 body: JSON.stringify(claudeRequest)
             });
 
+            console.log('Response status:', response.status);
+            console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                const errorText = await response.text();
+                console.error('Error response:', errorText);
+                const errorData = await response.json().catch(() => ({ error: errorText || 'Unknown error' }));
                 throw new Error(`API error: ${response.status} - ${errorData.error || 'Unknown error'}`);
             }
 
             const claudeResponse = await response.json();
+            console.log('Claude response received, content length:', claudeResponse.content[0].text.length);
             
             // Process Claude's response
             let workflowJson = claudeResponse.content[0].text.trim();
