@@ -235,6 +235,47 @@
                     background: #f9f9f9;
                     cursor: pointer;
                     margin-bottom: 20px;
+                    transition: all 0.3s ease;
+                }
+                
+                .n8n-upload-area:hover {
+                    border-color: #99c24d;
+                    background: #f0f8ff;
+                }
+                
+                .n8n-upload-area.has-file {
+                    border-color: #28a745;
+                    background: #d4edda;
+                }
+                
+                .n8n-loading {
+                    display: none;
+                    text-align: center;
+                    padding: 20px;
+                    background: #f0f8ff;
+                    border-radius: 8px;
+                    margin: 20px 0;
+                }
+                
+                .n8n-spinner {
+                    width: 30px;
+                    height: 30px;
+                    border: 3px solid #e0e0e0;
+                    border-top: 3px solid #048ba8;
+                    border-radius: 50%;
+                    animation: n8n-spin 1s linear infinite;
+                    margin: 0 auto 10px;
+                }
+                
+                @keyframes n8n-spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+                
+                @media (max-width: 768px) {
+                    .n8n-form-row {
+                        grid-template-columns: 1fr;
+                    }
                 }
                 
                 .n8n-generate-btn {
@@ -393,12 +434,31 @@
 
     function handleImageSelect() {
         const file = document.getElementById('n8n-widget-file').files[0];
-        if (!file) return;
+        const uploadArea = document.getElementById('n8n-upload-area');
+        const uploadContent = document.getElementById('n8n-upload-content');
+        
+        if (!file) {
+            uploadArea.classList.remove('has-file');
+            uploadContent.innerHTML = `
+                <div>📁 <strong>Upload Workflow Diagram</strong></div>
+                <div>Click to select image file</div>
+            `;
+            return;
+        }
         
         if (file.size > WIDGET_CONFIG.maxFileSize) {
             alert('File too large. Please use an image under 2MB.');
+            document.getElementById('n8n-widget-file').value = '';
             return;
         }
+        
+        // Show file selected
+        uploadArea.classList.add('has-file');
+        uploadContent.innerHTML = `
+            <div>✅ <strong>Image Selected</strong></div>
+            <div>${file.name} (${(file.size / 1024).toFixed(1)}KB)</div>
+            <div style="font-size: 0.9rem; color: #666; margin-top: 5px;">Ready to generate workflow</div>
+        `;
         
         console.log('Image selected:', file.name, (file.size / 1024).toFixed(1) + 'KB');
     }
@@ -419,6 +479,9 @@
         console.log('📋 Project:', projectName);
         console.log('🔧 Type:', workflowType);
         
+        // Show loading state
+        document.getElementById('n8n-loading').style.display = 'block';
+        document.getElementById('n8n-results').style.display = 'none';
         document.getElementById('n8n-generate-btn').disabled = true;
 
         try {
@@ -552,6 +615,8 @@ NO EXPLANATIONS. JSON ONLY.`;
             console.error('❌ Generation failed:', error);
             displayError('Generation failed: ' + error.message);
         } finally {
+            // Hide loading state
+            document.getElementById('n8n-loading').style.display = 'none';
             document.getElementById('n8n-generate-btn').disabled = false;
         }
     }
@@ -789,11 +854,26 @@ return [{ json: processedData }];`;
         },
 
         resetForm: function() {
+            // Hide results and loading
             document.getElementById('n8n-results').style.display = 'none';
+            document.getElementById('n8n-loading').style.display = 'none';
+            
+            // Reset form fields
             document.getElementById('n8n-widget-file').value = '';
             document.getElementById('n8n-video-transcript').value = '';
             document.getElementById('n8n-project-name').value = '';
             document.getElementById('n8n-workflow-type').value = 'ai-automation';
+            
+            // Reset upload area
+            const uploadArea = document.getElementById('n8n-upload-area');
+            const uploadContent = document.getElementById('n8n-upload-content');
+            uploadArea.classList.remove('has-file');
+            uploadContent.innerHTML = `
+                <div>📁 <strong>Upload Workflow Diagram</strong></div>
+                <div>Click to select image file</div>
+            `;
+            
+            // Clear workflow data
             currentWorkflow = null;
         }
     };
