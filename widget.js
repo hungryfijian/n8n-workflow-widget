@@ -10,9 +10,9 @@
         maxFileSize: 2 * 1024 * 1024 // 2MB
     };
 
-    // COMPREHENSIVE N8N Node Database with REAL node types
+    // HYBRID N8N Node Database - Manus's accurate types + our structure
     const N8N_NODE_DATABASE = {
-        // TRIGGERS
+        // TRIGGERS (Manus's verified types)
         "webhook": {
             type: "n8n-nodes-base.webhook",
             name: "Webhook",
@@ -28,27 +28,34 @@
             common_names: ["manual", "start", "trigger"]
         },
         
-        // AI/LANGCHAIN NODES (Real LangChain node types)
-        "openai": {
-            type: "n8n-nodes-langchain.openAi",
-            name: "OpenAI",
+        // AI NODES (Manus's corrected types - ACTUAL N8N nodes)
+        "openAiChatModel": {
+            type: "n8n-nodes-base.chatOpenAi",  // ✅ Verified real N8N type
+            name: "OpenAI Chat Model",
             category: "ai",
             parameters: { model: "gpt-4", temperature: 0.7 },
-            common_names: ["openai", "gpt", "chat model", "openai chat model", "language model"]
+            common_names: ["openai", "gpt", "chat model", "openai chat model", "language model", "llm"]
         },
-        "agent": {
-            type: "n8n-nodes-langchain.agent",
+        "aiAgent": {
+            type: "n8n-nodes-base.aiAgent",  // ✅ Verified real N8N type
             name: "AI Agent", 
             category: "ai",
-            parameters: { agentType: "tools", systemMessage: "You are a helpful assistant" },
+            parameters: { agentType: "tools", systemMessage: "You are a helpful assistant", model: "gpt-4" },
             common_names: ["agent", "ai agent", "tools agent", "research agent", "scriptwriting agent"]
         },
-        "chatModel": {
-            type: "n8n-nodes-langchain.chatModel",
-            name: "Chat Model",
-            category: "ai", 
-            parameters: { model: "gpt-4" },
-            common_names: ["chat model", "chat", "llm", "language model"]
+        "openAiAssistant": {
+            type: "n8n-nodes-base.openAiAssistant",  // ✅ Manus's addition
+            name: "OpenAI Assistant",
+            category: "ai",
+            parameters: { assistantId: "", instructions: "" },
+            common_names: ["openai assistant", "assistant"]
+        },
+        "structuredOutputParser": {
+            type: "n8n-nodes-base.structuredOutputParser",  // ✅ Manus's addition
+            name: "Structured Output Parser",
+            category: "ai",
+            parameters: { outputSchema: "{}" },
+            common_names: ["output parser", "json parser"]
         },
         
         // HTTP NODES
@@ -56,31 +63,38 @@
             type: "n8n-nodes-base.httpRequest",
             name: "HTTP Request",
             category: "http",
-            parameters: { method: "POST", url: "", authentication: "none" },
+            parameters: { method: "GET", url: "", authentication: "none" },
             common_names: ["http", "api", "request", "post", "get", "video creator", "firecrawl", "heygen"]
         },
         
-        // DATA PROCESSING
+        // DATA PROCESSING (Enhanced from Manus)
         "set": {
             type: "n8n-nodes-base.set",
             name: "Set",
             category: "data",
             parameters: { keepOnlySet: false, values: { string: [] } },
-            common_names: ["set", "data", "variable", "assign"]
+            common_names: ["set", "data", "variable", "assign", "edit fields"]
         },
         "code": {
             type: "n8n-nodes-base.code",
             name: "Code",
             category: "data",
             parameters: { jsCode: "return items;" },
-            common_names: ["code", "function", "javascript", "script"]
+            common_names: ["code", "function", "javascript", "script", "execute command"]
         },
         "function": {
             type: "n8n-nodes-base.function",
             name: "Function",
             category: "data", 
             parameters: { functionCode: "return items;" },
-            common_names: ["function", "process"]
+            common_names: ["function", "process data"]
+        },
+        "splitInBatches": {  // ✅ Manus's addition
+            type: "n8n-nodes-base.splitInBatches",
+            name: "Split In Batches",
+            category: "data",
+            parameters: { batchSize: 10 },
+            common_names: ["batch", "split"]
         },
         
         // FLOW CONTROL
@@ -89,7 +103,7 @@
             name: "IF",
             category: "flow",
             parameters: { conditions: { string: [], number: [], boolean: [] } },
-            common_names: ["if", "condition", "conditional"]
+            common_names: ["if", "condition", "conditional", "branch"]
         },
         "switch": {
             type: "n8n-nodes-base.switch", 
@@ -104,6 +118,13 @@
             category: "flow",
             parameters: { mode: "append" },
             common_names: ["merge", "combine", "join"]
+        },
+        "wait": {  // ✅ Manus's addition
+            type: "n8n-nodes-base.wait",
+            name: "Wait",
+            category: "flow",
+            parameters: { time: 5, unit: "seconds" },
+            common_names: ["wait", "delay"]
         },
         
         // RESPONSE NODES
@@ -123,18 +144,19 @@
         }
     };
 
-    // Node name mapping for common variations
+    // Enhanced Node Name Mappings (Manus's + ours)
     const NODE_NAME_MAPPINGS = {
-        "research agent": "agent",
-        "scriptwriting agent": "agent", 
-        "scriptwriting ai agent": "agent",
-        "ai agent": "agent",
-        "tools agent": "agent",
-        "openai chat model": "openai",
-        "openai chat model1": "openai", 
-        "chat model": "chatModel",
-        "language model": "openai",
-        "gpt": "openai",
+        "research agent": "aiAgent",
+        "scriptwriting agent": "aiAgent", 
+        "scriptwriting ai agent": "aiAgent",
+        "ai agent": "aiAgent",
+        "tools agent": "aiAgent",
+        "openai chat model": "openAiChatModel",  // ✅ Corrected mapping
+        "openai chat model1": "openAiChatModel", 
+        "chat model": "openAiChatModel",
+        "language model": "openAiChatModel",
+        "llm": "openAiChatModel",
+        "gpt": "openAiChatModel",
         "when chat message received": "webhook",
         "when message received": "webhook",
         "chat trigger": "webhook",
@@ -144,7 +166,17 @@
         "http request1": "httpRequest",
         "api call": "httpRequest",
         "firecrawl": "httpRequest",
-        "heygen": "httpRequest"
+        "heygen": "httpRequest",
+        "edit fields": "set",
+        "execute command": "code",
+        "process data": "function",
+        "batch": "splitInBatches",  // ✅ Manus's addition
+        "branch": "if",
+        "delay": "wait",  // ✅ Manus's addition
+        "openai assistant": "openAiAssistant",  // ✅ Manus's addition
+        "assistant": "openAiAssistant",
+        "output parser": "structuredOutputParser",  // ✅ Manus's addition
+        "json parser": "structuredOutputParser"
     };
 
     // Helper function to find node by name with mapping
@@ -173,7 +205,7 @@
         return N8N_NODE_DATABASE.set; // Ultimate fallback
     }
 
-    // Post-processing function to correct node types
+    // Enhanced Post-processing (Manus's validation + our corrections)
     function correctNodeTypes(workflow) {
         if (!workflow.nodes || !Array.isArray(workflow.nodes)) return workflow;
         
@@ -190,15 +222,21 @@
                 console.log(`Correcting ${nodeName}: ${originalType} → ${correctNode.type}`);
                 node.type = correctNode.type;
                 
-                // Update parameters to match correct node type
+                // Merge parameters, prioritizing existing parameters in the node (Manus's approach)
                 node.parameters = { ...correctNode.parameters, ...node.parameters };
                 
-                // Special handling for specific services
+                // Enhanced service-specific handling (Manus's improvement)
                 if (nodeName.toLowerCase().includes('firecrawl')) {
                     node.parameters.url = node.parameters.url || "https://api.firecrawl.dev/v0/scrape";
+                    node.parameters.method = node.parameters.method || "POST";
+                    node.parameters.authentication = node.parameters.authentication || "headerAuth";
+                    node.parameters.headers = node.parameters.headers || { "Authorization": "Bearer API_KEY" };
                 }
                 if (nodeName.toLowerCase().includes('heygen')) {
                     node.parameters.url = node.parameters.url || "https://api.heygen.com/v2/video/generate";
+                    node.parameters.method = node.parameters.method || "POST";
+                    node.parameters.authentication = node.parameters.authentication || "headerAuth";
+                    node.parameters.headers = node.parameters.headers || { "X-API-Key": "API_KEY" };
                 }
             }
         }
@@ -206,7 +244,7 @@
         return workflow;
     }
 
-    // Enhanced fix workflow structure
+    // Enhanced fix workflow structure (Manus's improved validation + our extraction)
     function fixWorkflowStructure(workflow) {
         if (!workflow || typeof workflow !== 'object') return workflow;
 
@@ -235,7 +273,7 @@
                 // Ensure required properties
                 if (!node.id) node.id = `node${i + 1}`;
                 if (!node.name) node.name = node.id;
-                if (!node.position || !Array.isArray(node.position)) {
+                if (!node.position || !Array.isArray(node.position) || node.position.length !== 2) {
                     node.position = [100 + i * 200, 100 + Math.floor(i / 3) * 150];
                 }
                 if (!node.parameters || typeof node.parameters !== 'object') {
@@ -244,8 +282,40 @@
             }
         }
 
-        // Apply node type corrections
+        // Apply node type corrections BEFORE connection validation
         workflow = correctNodeTypes(workflow);
+
+        // Enhanced connection validation (Manus's improvement)
+        const nodeIds = new Set(workflow.nodes.map(n => n.id));
+        const newConnections = {};
+
+        if (workflow.connections && typeof workflow.connections === 'object') {
+            for (const [sourceId, connections] of Object.entries(workflow.connections)) {
+                if (nodeIds.has(sourceId)) {
+                    newConnections[sourceId] = { main: [] };
+                    if (connections.main && Array.isArray(connections.main)) {
+                        for (const connectionGroup of connections.main) {
+                            if (Array.isArray(connectionGroup)) {
+                                const newConnectionGroup = [];
+                                for (const connection of connectionGroup) {
+                                    if (connection && connection.node && nodeIds.has(connection.node)) {
+                                        newConnectionGroup.push({
+                                            node: connection.node,
+                                            type: connection.type || 'main',
+                                            index: connection.index || 0
+                                        });
+                                    }
+                                }
+                                if (newConnectionGroup.length > 0) {
+                                    newConnections[sourceId].main.push(newConnectionGroup);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        workflow.connections = newConnections;
 
         return workflow;
     }
