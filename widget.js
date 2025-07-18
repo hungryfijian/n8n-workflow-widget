@@ -10,75 +10,245 @@
         maxFileSize: 2 * 1024 * 1024 // 2MB
     };
 
-    // ONLY VERIFIED WORKING N8N NODES (based on actual N8N interface)
+    // COMPREHENSIVE N8N Node Database with REAL node types
     const N8N_NODE_DATABASE = {
-        // WORKING TRIGGERS
+        // TRIGGERS
         "webhook": {
             type: "n8n-nodes-base.webhook",
             name: "Webhook",
             category: "trigger",
-            description: "Receives HTTP requests",
-            parameters: {
-                path: "webhook-path",
-                responseMode: "lastNode",
-                httpMethod: "POST"
-            },
-            common_names: ["webhook", "http trigger", "api endpoint", "when message received", "chat trigger"]
+            parameters: { path: "webhook-path", responseMode: "lastNode" },
+            common_names: ["webhook", "when message received", "chat trigger", "http trigger"]
+        },
+        "manualTrigger": {
+            type: "n8n-nodes-base.manualTrigger", 
+            name: "Manual Trigger",
+            category: "trigger",
+            parameters: {},
+            common_names: ["manual", "start", "trigger"]
         },
         
-        // WORKING HTTP NODES  
+        // AI/LANGCHAIN NODES (Real LangChain node types)
+        "openai": {
+            type: "n8n-nodes-langchain.openAi",
+            name: "OpenAI",
+            category: "ai",
+            parameters: { model: "gpt-4", temperature: 0.7 },
+            common_names: ["openai", "gpt", "chat model", "openai chat model", "language model"]
+        },
+        "agent": {
+            type: "n8n-nodes-langchain.agent",
+            name: "AI Agent", 
+            category: "ai",
+            parameters: { agentType: "tools", systemMessage: "You are a helpful assistant" },
+            common_names: ["agent", "ai agent", "tools agent", "research agent", "scriptwriting agent"]
+        },
+        "chatModel": {
+            type: "n8n-nodes-langchain.chatModel",
+            name: "Chat Model",
+            category: "ai", 
+            parameters: { model: "gpt-4" },
+            common_names: ["chat model", "chat", "llm", "language model"]
+        },
+        
+        // HTTP NODES
         "httpRequest": {
             type: "n8n-nodes-base.httpRequest",
             name: "HTTP Request",
             category: "http",
-            description: "Make HTTP requests",
-            parameters: {
-                method: "POST",
-                url: "",
-                authentication: "none"
-            },
-            common_names: ["http", "api call", "request", "post", "get", "video creator", "api request"]
+            parameters: { method: "POST", url: "", authentication: "none" },
+            common_names: ["http", "api", "request", "post", "get", "video creator", "firecrawl", "heygen"]
         },
         
-        // WORKING DATA NODES
+        // DATA PROCESSING
         "set": {
             type: "n8n-nodes-base.set",
             name: "Set",
             category: "data",
-            description: "Set data values",
-            parameters: {
-                keepOnlySet: false,
-                values: {
-                    string: []
-                }
-            },
-            common_names: ["set", "data", "variable", "value", "assign", "research agent", "scriptwriting agent", "openai chat model"]
+            parameters: { keepOnlySet: false, values: { string: [] } },
+            common_names: ["set", "data", "variable", "assign"]
         },
-        
-        // WORKING CODE EXECUTION
         "code": {
             type: "n8n-nodes-base.code",
             name: "Code",
+            category: "data",
+            parameters: { jsCode: "return items;" },
+            common_names: ["code", "function", "javascript", "script"]
+        },
+        "function": {
+            type: "n8n-nodes-base.function",
+            name: "Function",
             category: "data", 
-            description: "Execute JavaScript code",
-            parameters: {
-                jsCode: "// Process data\nreturn items.map(item => ({ json: { ...item.json, processed: true } }));"
-            },
-            common_names: ["code", "javascript", "script", "function", "agent", "ai agent"]
+            parameters: { functionCode: "return items;" },
+            common_names: ["function", "process"]
         },
         
-        // WORKING RESPONSE
+        // FLOW CONTROL
+        "if": {
+            type: "n8n-nodes-base.if",
+            name: "IF",
+            category: "flow",
+            parameters: { conditions: { string: [], number: [], boolean: [] } },
+            common_names: ["if", "condition", "conditional"]
+        },
+        "switch": {
+            type: "n8n-nodes-base.switch", 
+            name: "Switch",
+            category: "flow",
+            parameters: { rules: { values: [] } },
+            common_names: ["switch", "route", "routing"]
+        },
+        "merge": {
+            type: "n8n-nodes-base.merge",
+            name: "Merge", 
+            category: "flow",
+            parameters: { mode: "append" },
+            common_names: ["merge", "combine", "join"]
+        },
+        
+        // RESPONSE NODES
         "respondToWebhook": {
             type: "n8n-nodes-base.respondToWebhook",
             name: "Respond to Webhook",
-            category: "response",
-            description: "Send response to webhook",
-            parameters: {
-                responseMode: "lastNode"
-            },
+            category: "response", 
+            parameters: { responseMode: "lastNode" },
             common_names: ["respond", "response", "reply", "return"]
+        },
+        "noOp": {
+            type: "n8n-nodes-base.noOp",
+            name: "No Operation",
+            category: "response",
+            parameters: {},
+            common_names: ["no op", "end", "stop"]
         }
     };
+
+    // Node name mapping for common variations
+    const NODE_NAME_MAPPINGS = {
+        "research agent": "agent",
+        "scriptwriting agent": "agent", 
+        "scriptwriting ai agent": "agent",
+        "ai agent": "agent",
+        "tools agent": "agent",
+        "openai chat model": "openai",
+        "openai chat model1": "openai", 
+        "chat model": "chatModel",
+        "language model": "openai",
+        "gpt": "openai",
+        "when chat message received": "webhook",
+        "when message received": "webhook",
+        "chat trigger": "webhook",
+        "http trigger": "webhook",
+        "video creator": "httpRequest",
+        "http request": "httpRequest",
+        "http request1": "httpRequest",
+        "api call": "httpRequest",
+        "firecrawl": "httpRequest",
+        "heygen": "httpRequest"
+    };
+
+    // Helper function to find node by name with mapping
+    function findNodeByName(searchTerm) {
+        const term = searchTerm.toLowerCase().trim();
+        
+        // Check direct mapping first
+        if (NODE_NAME_MAPPINGS[term]) {
+            const mappedKey = NODE_NAME_MAPPINGS[term];
+            return N8N_NODE_DATABASE[mappedKey];
+        }
+        
+        // Check database entries
+        for (const [key, node] of Object.entries(N8N_NODE_DATABASE)) {
+            if (node.name.toLowerCase() === term) return node;
+            if (node.common_names.some(name => name.toLowerCase() === term)) return node;
+            if (term.includes(key) || key.includes(term.split(' ')[0])) return node;
+        }
+        
+        // Default fallback
+        if (term.includes('agent') || term.includes('ai')) return N8N_NODE_DATABASE.agent;
+        if (term.includes('openai') || term.includes('gpt') || term.includes('chat')) return N8N_NODE_DATABASE.openai;
+        if (term.includes('http') || term.includes('request') || term.includes('api')) return N8N_NODE_DATABASE.httpRequest;
+        if (term.includes('webhook') || term.includes('trigger')) return N8N_NODE_DATABASE.webhook;
+        
+        return N8N_NODE_DATABASE.set; // Ultimate fallback
+    }
+
+    // Post-processing function to correct node types
+    function correctNodeTypes(workflow) {
+        if (!workflow.nodes || !Array.isArray(workflow.nodes)) return workflow;
+        
+        console.log('Correcting node types...');
+        
+        for (const node of workflow.nodes) {
+            const originalType = node.type;
+            const nodeName = node.name || node.id;
+            
+            // Find correct node type based on name
+            const correctNode = findNodeByName(nodeName);
+            
+            if (correctNode && correctNode.type !== originalType) {
+                console.log(`Correcting ${nodeName}: ${originalType} → ${correctNode.type}`);
+                node.type = correctNode.type;
+                
+                // Update parameters to match correct node type
+                node.parameters = { ...correctNode.parameters, ...node.parameters };
+                
+                // Special handling for specific services
+                if (nodeName.toLowerCase().includes('firecrawl')) {
+                    node.parameters.url = node.parameters.url || "https://api.firecrawl.dev/v0/scrape";
+                }
+                if (nodeName.toLowerCase().includes('heygen')) {
+                    node.parameters.url = node.parameters.url || "https://api.heygen.com/v2/video/generate";
+                }
+            }
+        }
+        
+        return workflow;
+    }
+
+    // Enhanced fix workflow structure
+    function fixWorkflowStructure(workflow) {
+        if (!workflow || typeof workflow !== 'object') return workflow;
+
+        // Convert nodes object to array if needed
+        if (workflow.nodes && typeof workflow.nodes === 'object' && !Array.isArray(workflow.nodes)) {
+            console.log('Converting nodes object to array...');
+            const nodesArray = [];
+            for (const [nodeId, nodeData] of Object.entries(workflow.nodes)) {
+                if (nodeData && typeof nodeData === 'object') {
+                    nodeData.id = nodeData.id || nodeId;
+                    nodesArray.push(nodeData);
+                }
+            }
+            workflow.nodes = nodesArray;
+        }
+
+        // Ensure connections exist
+        if (!workflow.connections) workflow.connections = {};
+
+        // Fix and validate all nodes
+        if (Array.isArray(workflow.nodes)) {
+            for (let i = 0; i < workflow.nodes.length; i++) {
+                const node = workflow.nodes[i];
+                if (!node || typeof node !== 'object') continue;
+
+                // Ensure required properties
+                if (!node.id) node.id = `node${i + 1}`;
+                if (!node.name) node.name = node.id;
+                if (!node.position || !Array.isArray(node.position)) {
+                    node.position = [100 + i * 200, 100 + Math.floor(i / 3) * 150];
+                }
+                if (!node.parameters || typeof node.parameters !== 'object') {
+                    node.parameters = {};
+                }
+            }
+        }
+
+        // Apply node type corrections
+        workflow = correctNodeTypes(workflow);
+
+        return workflow;
+    }
 
     // Widget state
     let currentWorkflow = null;
@@ -1445,35 +1615,11 @@ OUTPUT ONLY COMPLETE, REALISTIC N8N JSON:`
 
     function getNodeClass(nodeType) {
         if (nodeType.includes('webhook') || nodeType.includes('trigger')) return 'n8n-node-webhook';
-        if (nodeType.includes('agent') || nodeType.includes('aiAgent')) return 'n8n-node-agent';
-        if (nodeType.includes('openAi') || nodeType.includes('chatOpenAi')) return 'n8n-node-openai';
+        if (nodeType.includes('agent') || nodeType.includes('langchain')) return 'n8n-node-agent';
+        if (nodeType.includes('openAi') || nodeType.includes('chatModel')) return 'n8n-node-openai';
         if (nodeType.includes('httpRequest')) return 'n8n-node-http';
-        if (nodeType.includes('set')) return 'n8n-node-set';
+        if (nodeType.includes('set') || nodeType.includes('code')) return 'n8n-node-set';
         return 'n8n-node-box';
-    }
-
-    // Helper function to find node by name
-    function findNodeByName(searchTerm) {
-        const term = searchTerm.toLowerCase();
-        
-        for (const [key, node] of Object.entries(N8N_NODE_DATABASE)) {
-            // Check exact match
-            if (node.name.toLowerCase().includes(term)) {
-                return node;
-            }
-            
-            // Check common names
-            if (node.common_names.some(name => name.includes(term) || term.includes(name))) {
-                return node;
-            }
-            
-            // Check description
-            if (node.description.toLowerCase().includes(term)) {
-                return node;
-            }
-        }
-        
-        return null;
     }
 
     function drawConnection(sourceElement, targetElement, container) {
